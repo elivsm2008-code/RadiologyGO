@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "RadiologyGO",
+    "slug": "radiologygo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "radiologygo",
+    "plugins": ["expo-router"],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0D3B66"
+      },
+      "edgeToEdgeEnabled": true
+    }
+  }
+}
