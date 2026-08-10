@@ -14,15 +14,20 @@ const practiceOptions: PracticeOption[] = [
 export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.brandRow}>
+          <Text style={styles.brand}>Radiology</Text>
+          <Text style={styles.brandHighlight}>GO</Text>
+        </View>
+
         <View style={styles.header}>
-          <Text style={styles.title}>RadiologyGO</Text>
-          <Text style={styles.question}>¿Qué deseas practicar hoy?</Text>
+          <Text style={styles.eyebrow}>ENTRENAMIENTO</Text>
+          <Text style={styles.title}>¿Qué deseas practicar hoy?</Text>
         </View>
 
         <View style={styles.grid}>
-          {practiceOptions.map((option) => (
-            <PracticeCard key={option.id} option={option} />
+          {practiceOptions.map((option, index) => (
+            <PracticeCard key={option.id} index={index} option={option} />
           ))}
         </View>
       </ScrollView>
@@ -32,9 +37,12 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.grisClaro },
-  content: { flexGrow: 1, paddingHorizontal: 20, paddingVertical: 32 },
-  header: { marginBottom: 28 },
-  title: { color: colors.azulOscuro, fontSize: 32, fontWeight: '800', marginBottom: 8 },
-  question: { color: colors.azulOscuro, fontSize: 20, fontWeight: '600' },
-  grid: { gap: 16 }
+  content: { width: '100%', maxWidth: 720, alignSelf: 'center', flexGrow: 1, paddingHorizontal: 20, paddingVertical: 28 },
+  brandRow: { flexDirection: 'row', marginBottom: 34 },
+  brand: { color: colors.azulOscuro, fontSize: 22, fontWeight: '800', letterSpacing: -0.5 },
+  brandHighlight: { color: colors.azulClaro, fontSize: 22, fontWeight: '800', letterSpacing: -0.5 },
+  header: { marginBottom: 26 },
+  eyebrow: { marginBottom: 8, color: colors.azulClaro, fontSize: 12, fontWeight: '800', letterSpacing: 1.6 },
+  title: { maxWidth: 430, color: colors.azulOscuro, fontSize: 30, fontWeight: '800', lineHeight: 38 },
+  grid: { gap: 14 }
 });

@@ -6,7 +6,7 @@ import { colors } from '@/src/constants/colors';
 export default function RootLayout() {
   return (
     <>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.grisClaro } }} />
     </>
   );
