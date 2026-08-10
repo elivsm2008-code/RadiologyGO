@@ -13,7 +13,7 @@ export default function WelcomeScreen() {
         </View>
 
         <View accessibilityLabel="Espacio provisional para Rayo" style={styles.mascotPlaceholder}>
-          <Text style={styles.placeholderText}>Rayo aparecerÃ¡ aquÃ­</Text>
+          <Text style={styles.placeholderText}>Rayo aparecerá aquí</Text>
         </View>
 
         <Pressable

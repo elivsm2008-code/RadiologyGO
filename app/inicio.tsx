@@ -6,7 +6,7 @@ import type { PracticeOption } from '@/src/types/practice';
 
 const practiceOptions: PracticeOption[] = [
   { id: 'posicionamientos', title: 'Posicionamientos' },
-  { id: 'casos-clinicos', title: 'Casos clÃ­nicos' },
+  { id: 'casos-clinicos', title: 'Casos clínicos' },
   { id: 'evaluaciones', title: 'Evaluaciones' },
   { id: 'mi-progreso', title: 'Mi progreso', accent: true }
 ];
@@ -17,7 +17,7 @@ export default function HomeScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Text style={styles.title}>RadiologyGO</Text>
-          <Text style={styles.question}>Â¿QuÃ© deseas practicar hoy?</Text>
+          <Text style={styles.question}>¿Qué deseas practicar hoy?</Text>
         </View>
 
         <View style={styles.grid}>
