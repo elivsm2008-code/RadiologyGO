@@ -36,7 +36,11 @@ export function RayoIntro() {
   const entranceScale = useRef(new Animated.Value(0.72)).current;
   const entranceY = useRef(new Animated.Value(32)).current;
   const idleY = useRef(new Animated.Value(0)).current;
+  const idleX = useRef(new Animated.Value(0)).current;
   const idleRotation = useRef(new Animated.Value(0)).current;
+  const breathScale = useRef(new Animated.Value(1)).current;
+  const shadowOpacity = useRef(new Animated.Value(0.16)).current;
+  const shadowScale = useRef(new Animated.Value(1)).current;
   const glowOpacity = useRef(new Animated.Value(0)).current;
   const glowScale = useRef(new Animated.Value(0.7)).current;
   const neutralOpacity = useRef(new Animated.Value(1)).current;
@@ -45,7 +49,7 @@ export function RayoIntro() {
   const celebrateOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const showPose = (from: Animated.Value, to: Animated.Value, duration = 170) =>
+    const showPose = (from: Animated.Value, to: Animated.Value, duration = 260) =>
       Animated.parallel([
         Animated.timing(from, { toValue: 0, duration, useNativeDriver: true }),
         Animated.timing(to, { toValue: 1, duration, useNativeDriver: true })
@@ -85,23 +89,35 @@ export function RayoIntro() {
       ]),
       Animated.delay(240),
       showPose(neutralOpacity, waveOpacity),
-      Animated.delay(760),
-      showPose(waveOpacity, neutralOpacity),
-      Animated.delay(320),
-      showPose(neutralOpacity, celebrateOpacity),
       Animated.delay(520),
+      showPose(waveOpacity, neutralOpacity),
+      Animated.delay(180),
+      showPose(neutralOpacity, waveOpacity, 220),
+      Animated.delay(380),
+      showPose(waveOpacity, neutralOpacity, 240),
+      Animated.delay(360),
+      showPose(neutralOpacity, celebrateOpacity),
+      Animated.delay(620),
       showPose(celebrateOpacity, neutralOpacity)
     ]);
 
     const idle = Animated.loop(
       Animated.sequence([
         Animated.parallel([
-          Animated.timing(idleY, { toValue: -5, duration: 1900, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-          Animated.timing(idleRotation, { toValue: 1, duration: 1900, easing: Easing.inOut(Easing.sin), useNativeDriver: true })
+          Animated.timing(idleY, { toValue: -5, duration: 2300, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(idleX, { toValue: 2, duration: 2300, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(idleRotation, { toValue: 1, duration: 2300, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(breathScale, { toValue: 1.012, duration: 2300, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(shadowOpacity, { toValue: 0.1, duration: 2300, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(shadowScale, { toValue: 0.9, duration: 2300, easing: Easing.inOut(Easing.sin), useNativeDriver: true })
         ]),
         Animated.parallel([
-          Animated.timing(idleY, { toValue: 0, duration: 1900, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-          Animated.timing(idleRotation, { toValue: -1, duration: 1900, easing: Easing.inOut(Easing.sin), useNativeDriver: true })
+          Animated.timing(idleY, { toValue: 1, duration: 2300, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(idleX, { toValue: -2, duration: 2300, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(idleRotation, { toValue: -1, duration: 2300, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(breathScale, { toValue: 0.996, duration: 2300, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(shadowOpacity, { toValue: 0.18, duration: 2300, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(shadowScale, { toValue: 1.04, duration: 2300, easing: Easing.inOut(Easing.sin), useNativeDriver: true })
         ])
       ])
     );
@@ -109,9 +125,9 @@ export function RayoIntro() {
     const blink = Animated.loop(
       Animated.sequence([
         Animated.delay(2800),
-        showPose(neutralOpacity, blinkOpacity, 90),
-        Animated.delay(130),
-        showPose(blinkOpacity, neutralOpacity, 110),
+        showPose(neutralOpacity, blinkOpacity, 110),
+        Animated.delay(105),
+        showPose(blinkOpacity, neutralOpacity, 140),
         Animated.delay(1700)
       ])
     );
@@ -143,7 +159,7 @@ export function RayoIntro() {
       blink.stop();
       breathingGlow.stop();
     };
-  }, [blinkOpacity, celebrateOpacity, entranceOpacity, entranceScale, entranceY, glowOpacity, glowScale, idleRotation, idleY, neutralOpacity, waveOpacity]);
+  }, [blinkOpacity, breathScale, celebrateOpacity, entranceOpacity, entranceScale, entranceY, glowOpacity, glowScale, idleRotation, idleX, idleY, neutralOpacity, shadowOpacity, shadowScale, waveOpacity]);
 
   const idleRotate = idleRotation.interpolate({
     inputRange: [-1, 1],
@@ -153,6 +169,9 @@ export function RayoIntro() {
   return (
     <View accessibilityLabel="Rayo, mascota animada de RadiologyGO" style={styles.stage}>
       <Animated.View style={[styles.glow, { opacity: glowOpacity, transform: [{ scale: glowScale }] }]} />
+      <Animated.View
+        style={[styles.shadow, { opacity: shadowOpacity, transform: [{ scaleX: shadowScale }] }]}
+      />
 
       <Animated.View
         style={[
@@ -162,7 +181,9 @@ export function RayoIntro() {
             transform: [
               { translateY: entranceY },
               { translateY: idleY },
+              { translateX: idleX },
               { scale: entranceScale },
+              { scale: breathScale },
               { rotate: idleRotate }
             ]
           }
@@ -205,5 +226,13 @@ const styles = StyleSheet.create({
     height: 190,
     borderRadius: 95,
     backgroundColor: colors.azulClaro
+  },
+  shadow: {
+    position: 'absolute',
+    bottom: 2,
+    width: 126,
+    height: 18,
+    borderRadius: 63,
+    backgroundColor: colors.azulOscuro
   }
 });
