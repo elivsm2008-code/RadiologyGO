@@ -1,9 +1,11 @@
-import { createContext, type PropsWithChildren, useContext, useMemo, useState } from 'react';
+import { createContext, type PropsWithChildren, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import { applyPracticeResult, createInitialLearningProgress } from '@/src/services/progressEngine';
+import { loadLearningProgress, saveLearningProgress } from '@/src/services/progressStorage';
 import type { LearningProgress, PracticeResult, PracticeUpdate } from '@/src/types/learning';
 
 type LearningProgressContextValue = {
+  isHydrated: boolean;
   progress: LearningProgress;
   registerPractice: (result: PracticeResult) => PracticeUpdate;
 };
@@ -12,15 +14,35 @@ const LearningProgressContext = createContext<LearningProgressContextValue | nul
 
 export function LearningProgressProvider({ children }: PropsWithChildren) {
   const [progress, setProgress] = useState(createInitialLearningProgress);
+  const [isHydrated, setIsHydrated] = useState(false);
+  const progressRef = useRef(progress);
+
+  useEffect(() => {
+    let active = true;
+    loadLearningProgress().then((storedProgress) => {
+      if (!active) return;
+      progressRef.current = storedProgress;
+      setProgress(storedProgress);
+      setIsHydrated(true);
+    });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    saveLearningProgress(progress).catch(() => undefined);
+  }, [isHydrated, progress]);
 
   const value = useMemo<LearningProgressContextValue>(() => ({
+    isHydrated,
     progress,
     registerPractice: (result) => {
-      const update = applyPracticeResult(progress, result);
+      const update = applyPracticeResult(progressRef.current, result);
+      progressRef.current = update.progress;
       setProgress(update.progress);
       return update;
     }
-  }), [progress]);
+  }), [isHydrated, progress]);
 
   return <LearningProgressContext.Provider value={value}>{children}</LearningProgressContext.Provider>;
 }

@@ -9,10 +9,15 @@ const practiceOptions: PracticeOption[] = [
   { id: 'posicionamientos', title: 'Posicionamientos', caption: 'Explorar regiones' },
   { id: 'casos-clinicos', title: 'Casos clínicos' },
   { id: 'evaluaciones', title: 'Evaluaciones' },
-  { id: 'mi-progreso', title: 'Mi progreso', accent: true }
+  { id: 'mi-progreso', title: 'Mi progreso', caption: 'Ver avance', accent: true }
 ];
 
 export default function HomeScreen() {
+  const openOption = (id: string) => {
+    if (id === 'posicionamientos') router.push('/posicionamientos');
+    if (id === 'mi-progreso') router.push('/progreso');
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -31,7 +36,7 @@ export default function HomeScreen() {
             <PracticeCard
               key={option.id}
               index={index}
-              onPress={option.id === 'posicionamientos' ? () => router.push('/posicionamientos') : undefined}
+              onPress={['posicionamientos', 'mi-progreso'].includes(option.id) ? () => openOption(option.id) : undefined}
               option={option}
             />
           ))}

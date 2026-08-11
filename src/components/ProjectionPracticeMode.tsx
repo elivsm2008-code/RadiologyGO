@@ -3,16 +3,44 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors } from '@/src/constants/colors';
 import { useLearningProgress } from '@/src/context/LearningProgressContext';
+import { getAchievementDefinition } from '@/src/data/learningCatalog';
 import type { PracticeExercise, ThumbProjection } from '@/src/data/thumbLearning';
 import type { PracticeUpdate } from '@/src/types/learning';
+import { AchievementCelebration } from './AchievementCelebration';
 import { MasteryBar } from './MasteryBar';
 import { PracticeFeedback } from './PracticeFeedback';
+import { RayoCompanion } from './RayoCompanion';
 
 type ProjectionPracticeModeProps = {
   projection: ThumbProjection;
 };
 
 const positiveMessages = ['¡Correcto!', 'Excelente posicionamiento.', '¡Vas dominando esta proyección!'];
+const practiceMessages = [
+  '¡Vamos! Tú puedes con esta proyección.',
+  'Un paso a la vez. Yo te acompaño.',
+  '¿Listo? Vamos a demostrar lo que sabes.',
+  'Cada práctica te acerca al dominio.',
+  '¡Vamos por ese 100%!'
+];
+const correctRayoMessages = [
+  '¡Excelente!',
+  '¡Eso es!',
+  '¡Muy bien! Sigue así.',
+  '¡Correcto! Vas dominando esta proyección.',
+  '¡Sabía que podías!'
+];
+const reviewRayoMessages = [
+  'Casi. Revisemos este paso.',
+  'Tranqui, equivocarse también enseña.',
+  'Vamos a revisarlo juntos.',
+  'Estuviste cerca. Inténtalo de nuevo.',
+  'Este paso necesita un poquito más de práctica.'
+];
+
+function pickMessage(messages: string[]) {
+  return messages[Math.floor(Math.random() * messages.length)];
+}
 
 function sameAnswers(selected: string[], correct: string[]) {
   return selected.length === correct.length && correct.every((answer) => selected.includes(answer));
@@ -33,6 +61,7 @@ export function ProjectionPracticeMode({ projection }: ProjectionPracticeModePro
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [incorrectAnswers, setIncorrectAnswers] = useState(0);
   const [result, setResult] = useState<PracticeUpdate | null>(null);
+  const [rayoMessage, setRayoMessage] = useState(() => pickMessage(practiceMessages));
 
   const exercise = projection.exercises[currentIndex];
 
@@ -44,6 +73,7 @@ export function ProjectionPracticeMode({ projection }: ProjectionPracticeModePro
     setCorrectAnswers(0);
     setIncorrectAnswers(0);
     setResult(null);
+    setRayoMessage(pickMessage(practiceMessages));
   };
 
   const toggleOption = (option: string) => {
@@ -64,6 +94,7 @@ export function ProjectionPracticeMode({ projection }: ProjectionPracticeModePro
     const answerIsCorrect = isCorrectAnswer(exercise, selected);
     setCorrect(answerIsCorrect);
     setAnswered(true);
+    setRayoMessage(pickMessage(answerIsCorrect ? correctRayoMessages : reviewRayoMessages));
     if (answerIsCorrect) setCorrectAnswers((value) => value + 1);
     else setIncorrectAnswers((value) => value + 1);
   };
@@ -82,11 +113,22 @@ export function ProjectionPracticeMode({ projection }: ProjectionPracticeModePro
     setSelected([]);
     setAnswered(false);
     setCorrect(false);
+    setRayoMessage(pickMessage(practiceMessages));
   };
 
   if (result) {
+    const finalMastery = result.progress.projections[projection.id]?.mastery ?? 0;
+    const completionMessage = finalMastery === 100
+      ? '¡LO LOGRASTE! Esta proyección ya es tuya.'
+      : result.score >= 80
+        ? '¡Increíble! Cada vez dominas mejor esta proyección.'
+        : result.score >= 50
+          ? '¡Buen trabajo! Vamos avanzando.'
+          : 'Todavía hay cosas por practicar. Vamos paso a paso.';
+
     return (
       <View style={styles.resultCard}>
+        <RayoCompanion message={completionMessage} pose={result.score >= 80 ? 'celebrate' : 'wave'} />
         <Text style={styles.resultEyebrow}>PRÁCTICA COMPLETADA</Text>
         <Text style={styles.resultScore}>{result.score}%</Text>
         <Text style={styles.resultLabel}>Puntuación obtenida</Text>
@@ -97,12 +139,19 @@ export function ProjectionPracticeMode({ projection }: ProjectionPracticeModePro
           <View style={styles.resultMetric}><Text style={styles.metricValue}>+{result.xpGained}</Text><Text style={styles.metricLabel}>XP</Text></View>
         </View>
 
-        {result.achievementsUnlocked.map((achievement) => (
-          <View key={achievement.id} style={styles.achievement}>
-            <Text style={styles.achievementTitle}>{achievement.id === 'maestria-dedo-pulgar' ? '¡Maestría desbloqueada!' : '¡Proyección dominada!'}</Text>
-            <Text style={styles.achievementText}>{achievement.title}</Text>
+        {result.levelAfter > result.levelBefore && (
+          <View style={styles.levelUp}>
+            <RayoCompanion message="¡Subiste de nivel!" pose="celebrate" />
+            <Text style={styles.levelUpEyebrow}>¡SUBISTE DE NIVEL!</Text>
+            <Text style={styles.levelUpTitle}>Nivel {result.levelAfter}</Text>
+            <Text style={styles.levelUpText}>Rayo celebra contigo este nuevo avance.</Text>
           </View>
-        ))}
+        )}
+
+        {result.achievementsUnlocked.map((achievement) => {
+          const definition = getAchievementDefinition(achievement.id);
+          return definition ? <AchievementCelebration definition={definition} key={achievement.id} xpGained={definition.xpReward} /> : null;
+        })}
 
         <Pressable accessibilityRole="button" onPress={resetPractice} style={styles.primaryButton}>
           <Text style={styles.primaryButtonText}>Practicar de nuevo</Text>
@@ -113,6 +162,7 @@ export function ProjectionPracticeMode({ projection }: ProjectionPracticeModePro
 
   return (
     <View>
+      <RayoCompanion message={rayoMessage} pose={answered && correct ? 'celebrate' : answered ? 'neutral' : 'wave'} />
       <View style={styles.practiceHeader}>
         <View style={styles.counterRow}>
           <Text style={styles.counter}>DESAFÍO {currentIndex + 1} DE {projection.exercises.length}</Text>
@@ -210,7 +260,8 @@ const styles = StyleSheet.create({
   resultMetric: { flex: 1, alignItems: 'center', borderRadius: 16, backgroundColor: colors.grisClaro, padding: 14 },
   metricValue: { color: colors.azulOscuro, fontSize: 19, fontWeight: '800' },
   metricLabel: { marginTop: 3, color: '#718492', fontSize: 12 },
-  achievement: { width: '100%', marginTop: 15, borderRadius: 17, backgroundColor: '#F3F1FF', padding: 15 },
-  achievementTitle: { color: colors.morado, fontSize: 14, fontWeight: '800' },
-  achievementText: { marginTop: 4, color: colors.azulOscuro, fontSize: 13, fontWeight: '600' }
+  levelUp: { width: '100%', marginTop: 15, borderRadius: 17, backgroundColor: '#F3F1FF', padding: 15 },
+  levelUpEyebrow: { color: colors.morado, fontSize: 10, fontWeight: '800', letterSpacing: 1 },
+  levelUpTitle: { marginTop: 4, color: colors.azulOscuro, fontSize: 18, fontWeight: '800' },
+  levelUpText: { marginTop: 4, color: '#617686', fontSize: 12 }
 });

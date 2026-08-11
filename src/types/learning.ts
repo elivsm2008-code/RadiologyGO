@@ -11,14 +11,13 @@ export type MasteryStatus =
 export type PracticeResult = {
   correctAnswers: number;
   incorrectAnswers: number;
-  projectionId: ProjectionId;
+  projectionId: string;
 };
 
 export type ProjectionProgress = {
   bestScore: number;
   lastPractice: string | null;
   mastery: number;
-  masteredRewardGranted: boolean;
   practiceCount: number;
 };
 
@@ -28,15 +27,35 @@ export type Achievement = {
   title: string;
 };
 
+export type AchievementDefinition = {
+  code: string;
+  description: string;
+  id: string;
+  requirement: string;
+  title: string;
+  xpReward: number;
+};
+
 export type LearningProgress = {
   achievements: Achievement[];
-  projections: Record<ProjectionId, ProjectionProgress>;
-  thumbMasteryRewardGranted: boolean;
+  projections: Record<string, ProjectionProgress>;
+  schemaVersion: number;
   xp: number;
+};
+
+export type LevelProgress = {
+  currentLevelXp: number;
+  level: number;
+  nextLevelTotalXp: number;
+  progressPercent: number;
+  xpIntoLevel: number;
+  xpNeededForLevel: number;
 };
 
 export type PracticeUpdate = {
   achievementsUnlocked: Achievement[];
+  levelAfter: number;
+  levelBefore: number;
   masteryGained: number;
   progress: LearningProgress;
   score: number;
