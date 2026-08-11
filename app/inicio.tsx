@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { PracticeCard } from '@/src/components/PracticeCard';
@@ -5,7 +6,7 @@ import { colors } from '@/src/constants/colors';
 import type { PracticeOption } from '@/src/types/practice';
 
 const practiceOptions: PracticeOption[] = [
-  { id: 'posicionamientos', title: 'Posicionamientos' },
+  { id: 'posicionamientos', title: 'Posicionamientos', caption: 'Explorar regiones' },
   { id: 'casos-clinicos', title: 'Casos clínicos' },
   { id: 'evaluaciones', title: 'Evaluaciones' },
   { id: 'mi-progreso', title: 'Mi progreso', accent: true }
@@ -27,7 +28,12 @@ export default function HomeScreen() {
 
         <View style={styles.grid}>
           {practiceOptions.map((option, index) => (
-            <PracticeCard key={option.id} index={index} option={option} />
+            <PracticeCard
+              key={option.id}
+              index={index}
+              onPress={option.id === 'posicionamientos' ? () => router.push('/posicionamientos') : undefined}
+              option={option}
+            />
           ))}
         </View>
       </ScrollView>

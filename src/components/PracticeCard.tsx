@@ -7,15 +7,17 @@ import { EntranceAnimation } from './EntranceAnimation';
 
 type PracticeCardProps = {
   index: number;
+  onPress?: () => void;
   option: PracticeOption;
 };
 
-export function PracticeCard({ index, option }: PracticeCardProps) {
+export function PracticeCard({ index, onPress, option }: PracticeCardProps) {
   return (
     <EntranceAnimation delay={80 + index * 80}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={option.title}
+        onPress={onPress}
         style={({ pressed }) => [styles.card, pressed && styles.pressed]}
       >
         <View style={[styles.icon, option.accent && styles.accentIcon]}>
@@ -23,7 +25,9 @@ export function PracticeCard({ index, option }: PracticeCardProps) {
         </View>
         <View style={styles.copy}>
           <Text style={styles.title}>{option.title}</Text>
-          <Text style={[styles.caption, option.accent && styles.accentCaption]}>Próximamente</Text>
+          <Text style={[styles.caption, option.accent && styles.accentCaption]}>
+            {option.caption ?? 'Próximamente'}
+          </Text>
         </View>
         <Text aria-hidden style={[styles.arrow, option.accent && styles.accentArrow]}>›</Text>
       </Pressable>
