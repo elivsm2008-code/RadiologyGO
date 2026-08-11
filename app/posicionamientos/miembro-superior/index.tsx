@@ -19,6 +19,18 @@ const studies: PositioningStudy[] = [
 ];
 
 export default function UpperLimbScreen() {
+  const openStudy = (study: PositioningStudy) => {
+    if (study.slug === 'dedo-pulgar') {
+      router.push('/posicionamientos/miembro-superior/dedo-pulgar');
+      return;
+    }
+
+    router.push({
+      pathname: '/posicionamientos/miembro-superior/[estudio]',
+      params: { estudio: study.slug, title: study.title }
+    });
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -34,10 +46,7 @@ export default function UpperLimbScreen() {
           {studies.map((study) => (
             <PositioningStudyCard
               key={study.slug}
-              onPress={() => router.push({
-                pathname: '/posicionamientos/miembro-superior/[estudio]',
-                params: { estudio: study.slug, title: study.title }
-              })}
+              onPress={() => openStudy(study)}
               study={study}
             />
           ))}
