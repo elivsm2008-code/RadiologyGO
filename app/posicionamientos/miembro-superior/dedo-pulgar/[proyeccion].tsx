@@ -49,7 +49,9 @@ export default function ThumbProjectionScreen() {
           </Pressable>
         </View>
 
-        {mode === 'aprender' ? <ProjectionLearningMode /> : <ProjectionPracticeMode />}
+        {mode === 'aprender'
+          ? <ProjectionLearningMode projection={projection} />
+          : <ProjectionPracticeMode projection={projection} />}
       </ScrollView>
     </SafeAreaView>
   );
