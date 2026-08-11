@@ -146,7 +146,12 @@ export function RayoIntro() {
           }
         ]}
       >
-        <Image resizeMode="cover" source={require('../../assets/images/RayoInicio.png')} style={styles.image} />
+        <Image
+          fadeDuration={0}
+          resizeMode="cover"
+          source={require('../../assets/images/RayoInicioOptimizado.jpg')}
+          style={styles.image}
+        />
       </Animated.View>
 
       <Animated.View
