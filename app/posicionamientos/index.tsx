@@ -27,6 +27,15 @@ export default function PositioningsScreen() {
     );
   }, [query]);
 
+  const openCategory = (category: PositioningCategory) => {
+    if (category.slug === 'miembro-superior') {
+      router.push('/posicionamientos/miembro-superior');
+      return;
+    }
+
+    router.push({ pathname: '/posicionamientos/[region]', params: { region: category.slug, title: category.title } });
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
@@ -47,7 +56,7 @@ export default function PositioningsScreen() {
               category={category}
               index={index}
               key={category.slug}
-              onPress={() => router.push({ pathname: '/posicionamientos/[region]', params: { region: category.slug, title: category.title } })}
+              onPress={() => openCategory(category)}
             />
           ))}
           {filteredCategories.length === 0 && (
