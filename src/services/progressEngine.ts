@@ -7,7 +7,9 @@ export function createInitialLearningProgress(): LearningProgress {
   return {
     achievements: [],
     projections: Object.fromEntries(projectionCatalog.map((projection) => [projection.id, emptyProjection()])),
-    schemaVersion: 1,
+    questionHistory: {},
+    recentQuestionIds: {},
+    schemaVersion: 2,
     xp: 0
   };
 }
@@ -22,8 +24,17 @@ export function normalizeLearningProgress(value?: Partial<LearningProgress> | nu
       projection.id,
       { ...emptyProjection(), ...(value.projections?.[projection.id] ?? {}) }
     ])),
-    schemaVersion: 1,
+    questionHistory: value.questionHistory && typeof value.questionHistory === 'object' ? value.questionHistory : {},
+    recentQuestionIds: value.recentQuestionIds && typeof value.recentQuestionIds === 'object' ? value.recentQuestionIds : {},
+    schemaVersion: 2,
     xp: typeof value.xp === 'number' && value.xp >= 0 ? value.xp : 0
+  };
+}
+
+export function recordPracticeSessionStarted(current: LearningProgress, projectionId: string, questionIds: string[]) {
+  return {
+    ...current,
+    recentQuestionIds: { ...current.recentQuestionIds, [projectionId]: questionIds }
   };
 }
 
@@ -124,6 +135,20 @@ export function applyPracticeResult(current: LearningProgress, result: PracticeR
     }
   };
 
+  const questionHistory = { ...current.questionHistory };
+  result.questionResults?.forEach((questionResult) => {
+    const previous = questionHistory[questionResult.questionId];
+    questionHistory[questionResult.questionId] = {
+      conceptId: questionResult.conceptId,
+      correctCount: (previous?.correctCount ?? 0) + (questionResult.correct ? 1 : 0),
+      incorrectCount: (previous?.incorrectCount ?? 0) + (questionResult.correct ? 0 : 1),
+      lastAnsweredCorrectly: questionResult.correct,
+      lastSeenAt: practicedAt,
+      projectionId: result.projectionId,
+      seenCount: (previous?.seenCount ?? 0) + 1
+    };
+  });
+
   if (mastery === 100) {
     const achievement = unlockAchievement(current.achievements, projectionItem.achievementId, practicedAt);
     if (achievement) {
@@ -144,7 +169,9 @@ export function applyPracticeResult(current: LearningProgress, result: PracticeR
   const progress = {
     achievements: [...current.achievements, ...achievementsUnlocked],
     projections,
-    schemaVersion: 1,
+    questionHistory,
+    recentQuestionIds: current.recentQuestionIds,
+    schemaVersion: 2,
     xp: current.xp + xpGained
   };
 

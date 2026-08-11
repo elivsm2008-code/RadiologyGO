@@ -12,6 +12,23 @@ export type PracticeResult = {
   correctAnswers: number;
   incorrectAnswers: number;
   projectionId: string;
+  questionResults?: QuestionResult[];
+};
+
+export type QuestionResult = {
+  conceptId: string;
+  correct: boolean;
+  questionId: string;
+};
+
+export type QuestionHistoryEntry = {
+  conceptId: string;
+  correctCount: number;
+  incorrectCount: number;
+  lastAnsweredCorrectly: boolean;
+  lastSeenAt: string;
+  projectionId: string;
+  seenCount: number;
 };
 
 export type ProjectionProgress = {
@@ -39,6 +56,8 @@ export type AchievementDefinition = {
 export type LearningProgress = {
   achievements: Achievement[];
   projections: Record<string, ProjectionProgress>;
+  questionHistory: Record<string, QuestionHistoryEntry>;
+  recentQuestionIds: Record<string, string[]>;
   schemaVersion: number;
   xp: number;
 };

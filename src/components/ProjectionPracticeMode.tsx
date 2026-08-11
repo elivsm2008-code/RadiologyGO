@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors } from '@/src/constants/colors';
 import { useLearningProgress } from '@/src/context/LearningProgressContext';
 import { getAchievementDefinition } from '@/src/data/learningCatalog';
-import type { PracticeExercise, ThumbProjection } from '@/src/data/thumbLearning';
-import type { PracticeUpdate } from '@/src/types/learning';
+import type { ThumbProjection } from '@/src/data/thumbLearning';
+import { getThumbQuestionBank } from '@/src/data/thumbQuestionBanks';
+import { selectPracticeQuestions } from '@/src/services/practiceRotationEngine';
+import type { LearningProgress, PracticeUpdate, QuestionResult } from '@/src/types/learning';
+import type { PracticeQuestion } from '@/src/types/practiceQuestions';
 import { AchievementCelebration } from './AchievementCelebration';
 import { MasteryBar } from './MasteryBar';
 import { PracticeFeedback } from './PracticeFeedback';
@@ -46,14 +49,15 @@ function sameAnswers(selected: string[], correct: string[]) {
   return selected.length === correct.length && correct.every((answer) => selected.includes(answer));
 }
 
-function isCorrectAnswer(exercise: PracticeExercise, selected: string[]) {
+function isCorrectAnswer(exercise: PracticeQuestion, selected: string[]) {
   if (exercise.type === 'order') return selected.length === exercise.correctOrder.length && selected.every((answer, index) => answer === exercise.correctOrder[index]);
   if (exercise.type === 'multi-select') return sameAnswers(selected, exercise.correctOptions);
   return selected[0] === exercise.correctOption;
 }
 
 export function ProjectionPracticeMode({ projection }: ProjectionPracticeModeProps) {
-  const { registerPractice } = useLearningProgress();
+  const { isHydrated, progress, registerPractice, startPracticeSession } = useLearningProgress();
+  const [sessionQuestions, setSessionQuestions] = useState<PracticeQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selected, setSelected] = useState<string[]>([]);
   const [answered, setAnswered] = useState(false);
@@ -61,19 +65,38 @@ export function ProjectionPracticeMode({ projection }: ProjectionPracticeModePro
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [incorrectAnswers, setIncorrectAnswers] = useState(0);
   const [result, setResult] = useState<PracticeUpdate | null>(null);
+  const [questionResults, setQuestionResults] = useState<QuestionResult[]>([]);
   const [rayoMessage, setRayoMessage] = useState(() => pickMessage(practiceMessages));
 
-  const exercise = projection.exercises[currentIndex];
+  const exercise = sessionQuestions[currentIndex];
 
-  const resetPractice = () => {
+  const beginPractice = (sourceProgress: LearningProgress) => {
+    const questions = selectPracticeQuestions({
+      bank: getThumbQuestionBank(projection.id),
+      history: sourceProgress.questionHistory,
+      projectionId: projection.id,
+      recentQuestionIds: sourceProgress.recentQuestionIds[projection.id],
+      sessionSize: 7
+    });
+    setSessionQuestions(questions);
+    startPracticeSession(projection.id, questions.map((question) => question.id));
     setCurrentIndex(0);
     setSelected([]);
     setAnswered(false);
     setCorrect(false);
     setCorrectAnswers(0);
     setIncorrectAnswers(0);
+    setQuestionResults([]);
     setResult(null);
     setRayoMessage(pickMessage(practiceMessages));
+  };
+
+  useEffect(() => {
+    if (isHydrated && sessionQuestions.length === 0) beginPractice(progress);
+  }, [isHydrated, projection.id]);
+
+  const resetPractice = () => {
+    beginPractice(result?.progress ?? progress);
   };
 
   const toggleOption = (option: string) => {
@@ -95,16 +118,18 @@ export function ProjectionPracticeMode({ projection }: ProjectionPracticeModePro
     setCorrect(answerIsCorrect);
     setAnswered(true);
     setRayoMessage(pickMessage(answerIsCorrect ? correctRayoMessages : reviewRayoMessages));
+    setQuestionResults((value) => [...value, { conceptId: exercise.conceptId, correct: answerIsCorrect, questionId: exercise.id }]);
     if (answerIsCorrect) setCorrectAnswers((value) => value + 1);
     else setIncorrectAnswers((value) => value + 1);
   };
 
   const continuePractice = () => {
-    if (currentIndex === projection.exercises.length - 1) {
+    if (currentIndex === sessionQuestions.length - 1) {
       setResult(registerPractice({
         correctAnswers,
         incorrectAnswers,
-        projectionId: projection.id
+        projectionId: projection.id,
+        questionResults
       }));
       return;
     }
@@ -115,6 +140,10 @@ export function ProjectionPracticeMode({ projection }: ProjectionPracticeModePro
     setCorrect(false);
     setRayoMessage(pickMessage(practiceMessages));
   };
+
+  if (!isHydrated || !exercise) {
+    return <View style={styles.loadingCard}><Text style={styles.loadingText}>Preparando una práctica diferente…</Text></View>;
+  }
 
   if (result) {
     const finalMastery = result.progress.projections[projection.id]?.mastery ?? 0;
@@ -165,10 +194,10 @@ export function ProjectionPracticeMode({ projection }: ProjectionPracticeModePro
       <RayoCompanion message={rayoMessage} pose={answered && correct ? 'celebrate' : answered ? 'neutral' : 'wave'} />
       <View style={styles.practiceHeader}>
         <View style={styles.counterRow}>
-          <Text style={styles.counter}>DESAFÍO {currentIndex + 1} DE {projection.exercises.length}</Text>
-          <Text style={styles.exerciseType}>{exercise.type === 'order' ? 'ORDENAR' : exercise.type === 'multi-select' ? 'SELECCIÓN MÚLTIPLE' : 'SELECCIÓN'}</Text>
+          <Text style={styles.counter}>DESAFÍO {currentIndex + 1} DE {sessionQuestions.length}</Text>
+          <Text style={styles.exerciseType}>{exercise.type === 'order' ? 'ORDENAR' : exercise.type === 'multi-select' ? 'SELECCIÓN MÚLTIPLE' : exercise.type === 'true-false' ? 'VERDADERO / FALSO' : exercise.type === 'scenario' ? 'ESCENARIO' : exercise.type === 'completion' ? 'COMPLETAR' : 'SELECCIÓN'}</Text>
         </View>
-        <MasteryBar value={((currentIndex + (answered ? 1 : 0)) / projection.exercises.length) * 100} />
+        <MasteryBar value={((currentIndex + (answered ? 1 : 0)) / sessionQuestions.length) * 100} />
       </View>
 
       <View style={styles.challengeCard}>
@@ -218,7 +247,7 @@ export function ProjectionPracticeMode({ projection }: ProjectionPracticeModePro
           onPress={answered ? continuePractice : checkAnswer}
           style={[styles.primaryButton, selected.length === 0 && styles.disabledButton]}
         >
-          <Text style={styles.primaryButtonText}>{answered ? (currentIndex === projection.exercises.length - 1 ? 'Ver resultado' : 'Siguiente desafío') : 'Comprobar'}</Text>
+          <Text style={styles.primaryButtonText}>{answered ? (currentIndex === sessionQuestions.length - 1 ? 'Ver resultado' : 'Siguiente desafío') : 'Comprobar'}</Text>
         </Pressable>
       </View>
     </View>
@@ -226,6 +255,8 @@ export function ProjectionPracticeMode({ projection }: ProjectionPracticeModePro
 }
 
 const styles = StyleSheet.create({
+  loadingCard: { borderRadius: 20, backgroundColor: colors.blanco, padding: 22 },
+  loadingText: { color: '#617686', fontSize: 14, textAlign: 'center' },
   practiceHeader: { marginBottom: 14 },
   counterRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 9 },
   counter: { color: colors.azulOscuro, fontSize: 11, fontWeight: '800', letterSpacing: 0.8 },

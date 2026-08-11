@@ -1,6 +1,6 @@
 import { createContext, type PropsWithChildren, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
-import { applyPracticeResult, createInitialLearningProgress } from '@/src/services/progressEngine';
+import { applyPracticeResult, createInitialLearningProgress, recordPracticeSessionStarted } from '@/src/services/progressEngine';
 import { loadLearningProgress, saveLearningProgress } from '@/src/services/progressStorage';
 import type { LearningProgress, PracticeResult, PracticeUpdate } from '@/src/types/learning';
 
@@ -8,6 +8,7 @@ type LearningProgressContextValue = {
   isHydrated: boolean;
   progress: LearningProgress;
   registerPractice: (result: PracticeResult) => PracticeUpdate;
+  startPracticeSession: (projectionId: string, questionIds: string[]) => void;
 };
 
 const LearningProgressContext = createContext<LearningProgressContextValue | null>(null);
@@ -41,6 +42,11 @@ export function LearningProgressProvider({ children }: PropsWithChildren) {
       progressRef.current = update.progress;
       setProgress(update.progress);
       return update;
+    },
+    startPracticeSession: (projectionId, questionIds) => {
+      const updated = recordPracticeSessionStarted(progressRef.current, projectionId, questionIds);
+      progressRef.current = updated;
+      setProgress(updated);
     }
   }), [isHydrated, progress]);
 
