@@ -3,213 +3,207 @@ import { Animated, Easing, Image, StyleSheet, View } from 'react-native';
 
 import { colors } from '@/src/constants/colors';
 
-const CARD_WIDTH = 226;
-const CARD_HEIGHT = 300;
+const FRAME_SIZE = 238;
+const SHEET_SIZE = FRAME_SIZE * 2;
+
+type SpriteFrameProps = {
+  column: 0 | 1;
+  opacity: Animated.Value;
+  row: 0 | 1;
+};
+
+function SpriteFrame({ column, opacity, row }: SpriteFrameProps) {
+  return (
+    <Animated.View style={[styles.frame, { opacity }]}>
+      <Image
+        fadeDuration={0}
+        resizeMode="stretch"
+        source={require('../../assets/images/RayoSprites.png')}
+        style={[
+          styles.spriteSheet,
+          {
+            left: -column * FRAME_SIZE,
+            top: -row * FRAME_SIZE
+          }
+        ]}
+      />
+    </Animated.View>
+  );
+}
 
 export function RayoIntro() {
-  const imageOpacity = useRef(new Animated.Value(0)).current;
-  const imageScale = useRef(new Animated.Value(0.88)).current;
-  const entranceY = useRef(new Animated.Value(24)).current;
-  const scanY = useRef(new Animated.Value(-12)).current;
-  const scanOpacity = useRef(new Animated.Value(0)).current;
-  const haloOpacity = useRef(new Animated.Value(0)).current;
-  const haloScale = useRef(new Animated.Value(0.7)).current;
-  const saluteRotation = useRef(new Animated.Value(0)).current;
-  const saluteY = useRef(new Animated.Value(0)).current;
+  const entranceOpacity = useRef(new Animated.Value(0)).current;
+  const entranceScale = useRef(new Animated.Value(0.72)).current;
+  const entranceY = useRef(new Animated.Value(32)).current;
   const idleY = useRef(new Animated.Value(0)).current;
   const idleRotation = useRef(new Animated.Value(0)).current;
+  const glowOpacity = useRef(new Animated.Value(0)).current;
+  const glowScale = useRef(new Animated.Value(0.7)).current;
+  const neutralOpacity = useRef(new Animated.Value(1)).current;
+  const waveOpacity = useRef(new Animated.Value(0)).current;
+  const blinkOpacity = useRef(new Animated.Value(0)).current;
+  const celebrateOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const introduction = Animated.sequence([
-      Animated.delay(250),
+    const showPose = (from: Animated.Value, to: Animated.Value, duration = 170) =>
       Animated.parallel([
-        Animated.timing(imageOpacity, {
+        Animated.timing(from, { toValue: 0, duration, useNativeDriver: true }),
+        Animated.timing(to, { toValue: 1, duration, useNativeDriver: true })
+      ]);
+
+    const introduction = Animated.sequence([
+      Animated.delay(180),
+      Animated.parallel([
+        Animated.timing(entranceOpacity, {
           toValue: 1,
-          duration: 1050,
+          duration: 700,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true
         }),
-        Animated.timing(imageScale, {
+        Animated.timing(entranceScale, {
           toValue: 1,
-          duration: 1200,
-          easing: Easing.out(Easing.back(1.08)),
+          duration: 850,
+          easing: Easing.out(Easing.back(1.15)),
           useNativeDriver: true
         }),
         Animated.timing(entranceY, {
           toValue: 0,
-          duration: 1100,
+          duration: 760,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true
         }),
-        Animated.timing(scanY, {
-          toValue: CARD_HEIGHT,
-          duration: 1450,
-          easing: Easing.inOut(Easing.cubic),
-          useNativeDriver: true
-        }),
-        Animated.sequence([
-          Animated.timing(scanOpacity, { toValue: 0.9, duration: 180, useNativeDriver: true }),
-          Animated.delay(960),
-          Animated.timing(scanOpacity, { toValue: 0, duration: 310, useNativeDriver: true })
-        ])
-      ]),
-      Animated.parallel([
         Animated.sequence([
           Animated.parallel([
-            Animated.timing(haloOpacity, { toValue: 0.3, duration: 180, useNativeDriver: true }),
-            Animated.timing(haloScale, { toValue: 0.88, duration: 180, useNativeDriver: true })
+            Animated.timing(glowOpacity, { toValue: 0.32, duration: 260, useNativeDriver: true }),
+            Animated.timing(glowScale, { toValue: 0.9, duration: 260, useNativeDriver: true })
           ]),
           Animated.parallel([
-            Animated.timing(haloOpacity, { toValue: 0, duration: 720, useNativeDriver: true }),
-            Animated.timing(haloScale, {
-              toValue: 1.45,
-              duration: 720,
-              easing: Easing.out(Easing.cubic),
-              useNativeDriver: true
-            })
+            Animated.timing(glowOpacity, { toValue: 0.08, duration: 720, useNativeDriver: true }),
+            Animated.timing(glowScale, { toValue: 1.25, duration: 720, easing: Easing.out(Easing.cubic), useNativeDriver: true })
           ])
-        ]),
-        Animated.sequence([
-          Animated.timing(entranceY, {
-            toValue: -9,
-            duration: 330,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true
-          }),
-          Animated.timing(entranceY, {
-            toValue: 0,
-            duration: 420,
-            easing: Easing.out(Easing.quad),
-            useNativeDriver: true
-          })
         ])
       ]),
-      Animated.sequence([
-        Animated.parallel([
-          Animated.timing(saluteRotation, { toValue: -1, duration: 280, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-          Animated.timing(saluteY, { toValue: -4, duration: 280, easing: Easing.inOut(Easing.sin), useNativeDriver: true })
-        ]),
-        Animated.parallel([
-          Animated.timing(saluteRotation, { toValue: 1, duration: 520, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-          Animated.timing(saluteY, { toValue: 1, duration: 520, easing: Easing.inOut(Easing.sin), useNativeDriver: true })
-        ]),
-        Animated.parallel([
-          Animated.timing(saluteRotation, { toValue: 0, duration: 300, easing: Easing.out(Easing.sin), useNativeDriver: true }),
-          Animated.timing(saluteY, { toValue: 0, duration: 300, easing: Easing.out(Easing.sin), useNativeDriver: true })
-        ])
-      ])
+      Animated.delay(240),
+      showPose(neutralOpacity, waveOpacity),
+      Animated.delay(760),
+      showPose(waveOpacity, neutralOpacity),
+      Animated.delay(320),
+      showPose(neutralOpacity, celebrateOpacity),
+      Animated.delay(520),
+      showPose(celebrateOpacity, neutralOpacity)
     ]);
 
     const idle = Animated.loop(
       Animated.sequence([
         Animated.parallel([
-          Animated.timing(idleY, { toValue: -5, duration: 2100, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-          Animated.timing(idleRotation, { toValue: 1, duration: 2100, easing: Easing.inOut(Easing.sin), useNativeDriver: true })
+          Animated.timing(idleY, { toValue: -5, duration: 1900, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(idleRotation, { toValue: 1, duration: 1900, easing: Easing.inOut(Easing.sin), useNativeDriver: true })
         ]),
         Animated.parallel([
-          Animated.timing(idleY, { toValue: 0, duration: 2100, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-          Animated.timing(idleRotation, { toValue: -1, duration: 2100, easing: Easing.inOut(Easing.sin), useNativeDriver: true })
+          Animated.timing(idleY, { toValue: 0, duration: 1900, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(idleRotation, { toValue: -1, duration: 1900, easing: Easing.inOut(Easing.sin), useNativeDriver: true })
+        ])
+      ])
+    );
+
+    const blink = Animated.loop(
+      Animated.sequence([
+        Animated.delay(2800),
+        showPose(neutralOpacity, blinkOpacity, 90),
+        Animated.delay(130),
+        showPose(blinkOpacity, neutralOpacity, 110),
+        Animated.delay(1700)
+      ])
+    );
+
+    const breathingGlow = Animated.loop(
+      Animated.sequence([
+        Animated.parallel([
+          Animated.timing(glowOpacity, { toValue: 0.14, duration: 1500, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(glowScale, { toValue: 1.32, duration: 1500, easing: Easing.inOut(Easing.sin), useNativeDriver: true })
+        ]),
+        Animated.parallel([
+          Animated.timing(glowOpacity, { toValue: 0.06, duration: 1500, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(glowScale, { toValue: 1.18, duration: 1500, easing: Easing.inOut(Easing.sin), useNativeDriver: true })
         ])
       ])
     );
 
     introduction.start(({ finished }) => {
-      if (finished) idle.start();
+      if (finished) {
+        idle.start();
+        blink.start();
+        breathingGlow.start();
+      }
     });
 
     return () => {
       introduction.stop();
       idle.stop();
+      blink.stop();
+      breathingGlow.stop();
     };
-  }, [entranceY, haloOpacity, haloScale, idleRotation, idleY, imageOpacity, imageScale, saluteRotation, saluteY, scanOpacity, scanY]);
+  }, [blinkOpacity, celebrateOpacity, entranceOpacity, entranceScale, entranceY, glowOpacity, glowScale, idleRotation, idleY, neutralOpacity, waveOpacity]);
 
-  const saluteRotate = saluteRotation.interpolate({ inputRange: [-1, 1], outputRange: ['-2deg', '2deg'] });
-  const idleRotate = idleRotation.interpolate({ inputRange: [-1, 1], outputRange: ['-0.45deg', '0.45deg'] });
+  const idleRotate = idleRotation.interpolate({
+    inputRange: [-1, 1],
+    outputRange: ['-0.6deg', '0.6deg']
+  });
 
   return (
-    <View accessibilityLabel="Rayo, mascota de RadiologyGO" style={styles.stage}>
-      <Animated.View style={[styles.halo, { opacity: haloOpacity, transform: [{ scale: haloScale }] }]} />
+    <View accessibilityLabel="Rayo, mascota animada de RadiologyGO" style={styles.stage}>
+      <Animated.View style={[styles.glow, { opacity: glowOpacity, transform: [{ scale: glowScale }] }]} />
 
       <Animated.View
         style={[
-          styles.card,
+          styles.character,
           {
-            opacity: imageOpacity,
+            opacity: entranceOpacity,
             transform: [
               { translateY: entranceY },
-              { translateY: saluteY },
               { translateY: idleY },
-              { scale: imageScale },
-              { rotate: saluteRotate },
+              { scale: entranceScale },
               { rotate: idleRotate }
             ]
           }
         ]}
       >
-        <Image
-          fadeDuration={0}
-          resizeMode="cover"
-          source={require('../../assets/images/RayoInicioOptimizado.jpg')}
-          style={styles.image}
-        />
+        <SpriteFrame column={0} opacity={neutralOpacity} row={0} />
+        <SpriteFrame column={1} opacity={waveOpacity} row={0} />
+        <SpriteFrame column={0} opacity={blinkOpacity} row={1} />
+        <SpriteFrame column={1} opacity={celebrateOpacity} row={1} />
       </Animated.View>
-
-      <Animated.View
-        pointerEvents="none"
-        style={[styles.scanGlow, { opacity: scanOpacity, transform: [{ translateY: scanY }] }]}
-      />
-      <Animated.View
-        pointerEvents="none"
-        style={[styles.scanLine, { opacity: scanOpacity, transform: [{ translateY: scanY }] }]}
-      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  stage: { width: '100%', height: CARD_HEIGHT + 14, alignItems: 'center', justifyContent: 'flex-start' },
-  card: {
-    width: CARD_WIDTH,
-    height: CARD_HEIGHT,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: '#BDEBFF',
-    borderRadius: 30,
-    backgroundColor: colors.azulOscuro,
-    shadowColor: colors.azulClaro,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 18,
-    elevation: 8
+  stage: {
+    width: '100%',
+    height: FRAME_SIZE + 16,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
-  image: { width: '100%', height: '100%' },
-  halo: {
+  character: {
+    width: FRAME_SIZE,
+    height: FRAME_SIZE
+  },
+  frame: {
     position: 'absolute',
-    top: 46,
-    width: 210,
-    height: 210,
-    borderRadius: 105,
+    width: FRAME_SIZE,
+    height: FRAME_SIZE,
+    overflow: 'hidden'
+  },
+  spriteSheet: {
+    position: 'absolute',
+    width: SHEET_SIZE,
+    height: SHEET_SIZE
+  },
+  glow: {
+    position: 'absolute',
+    width: 190,
+    height: 190,
+    borderRadius: 95,
     backgroundColor: colors.azulClaro
-  },
-  scanGlow: {
-    position: 'absolute',
-    top: -5,
-    width: CARD_WIDTH + 28,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: colors.azulClaro
-  },
-  scanLine: {
-    position: 'absolute',
-    top: 0,
-    width: CARD_WIDTH + 16,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: '#C6F5FF',
-    shadowColor: '#55DFFF',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 6
   }
 });
