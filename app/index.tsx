@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { EntranceAnimation } from '@/src/components/EntranceAnimation';
-import { RayoPlaceholder } from '@/src/components/RayoPlaceholder';
+import { RayoIntro } from '@/src/components/RayoIntro';
 import { colors } from '@/src/constants/colors';
 
 export default function WelcomeScreen() {
@@ -23,9 +23,9 @@ export default function WelcomeScreen() {
             <Text style={styles.tagline}>Aprende. Practica. Perfecciona.</Text>
           </EntranceAnimation>
 
-          <EntranceAnimation delay={220} style={styles.mascotSection}>
-            <RayoPlaceholder />
-          </EntranceAnimation>
+          <View style={styles.mascotSection}>
+            <RayoIntro />
+          </View>
 
           <EntranceAnimation delay={360} style={styles.messageBlock}>
             <Text style={styles.greeting}>¡Hola! Soy Rayo, tu compañero de aprendizaje.</Text>
