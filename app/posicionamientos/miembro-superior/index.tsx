@@ -14,8 +14,8 @@ const studies: PositioningStudy[] = [
   { code: 'HO', title: 'Hombro', slug: 'hombro' },
   { code: 'CL', title: 'Clavícula', slug: 'clavicula' },
   { code: 'ES', title: 'Escápula', slug: 'escapula' },
-  { code: 'AC', title: 'Articulación Acromioclavicular', slug: 'articulacion-acromioclavicular' },
-  { code: 'EC', title: 'Articulación Esternoclavicular', slug: 'articulacion-esternoclavicular' }
+  { code: 'AC', title: 'Articulación Acromio Clavicular', slug: 'articulacion-acromioclavicular' },
+  { code: 'EC', title: 'Articulación Esterno Clavicular', slug: 'articulacion-esternoclavicular' }
 ];
 
 export default function UpperLimbScreen() {
