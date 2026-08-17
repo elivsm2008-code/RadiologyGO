@@ -1,274 +1,112 @@
 import type { ProjectionId } from '@/src/types/learning';
 import type { PracticeQuestion } from '@/src/types/practiceQuestions';
 
-const patientPosition = 'Colocado en un extremo de la mesa, cómodamente sentado.';
-const tablePosition = 'Colocar la mano y el antebrazo a la altura de la mesa.';
-const centralRay = 'Perpendicular a la articulación metacarpofalángica del dedo pulgar.';
-const dfr = '40 pulgadas.';
-const structures = ['Falange distal', 'Falange proximal', 'Primer metacarpiano'];
+type Kind = 'choice' | 'completion' | 'scenario' | 'true-false';
+const title = (id: string) => `Pregunta ${Number(id.split('-').at(-1))}`;
+const q = (id: string, conceptId: string, type: Kind, prompt: string, options: string[], correctOption: string): PracticeQuestion => ({ id, conceptId, type, title: title(id), prompt, options, correctOption, correctExplanation: `Respuesta correcta: ${correctOption}` });
+const m = (id: string, conceptId: string, prompt: string, options: string[], correctOptions: string[]): PracticeQuestion => ({ id, conceptId, type: 'multi-select', title: title(id), prompt, options, correctOptions, correctExplanation: `Respuesta correcta: ${correctOptions.join(' + ')}` });
+const o = (id: string, conceptId: string, prompt: string, options: string[], correctOrder: string[]): PracticeQuestion => ({ id, conceptId, type: 'order', title: title(id), prompt, options, correctOrder, correctExplanation: `Orden correcto: ${correctOrder.join(' → ')}` });
+const t = (id: string, conceptId: string, prompt: string, acceptedAnswers: string[], answer: string): PracticeQuestion => ({ id, conceptId, type: 'text', title: title(id), prompt, options: [], acceptedAnswers, correctExplanation: `Respuesta correcta: ${answer}` });
 
-const apPosition = 'Rotar la mano internamente hasta que el dedo pulgar esté en posición AP.';
-const obliqueFingerPosition = 'Extender los dedos de la mano.';
-const pronePosition = 'Colocar la mano en posición prona.';
-const lateralFingerPosition = 'Flexionar los dedos del 2.º al 5.º a 90 grados.';
-const lateralResult = 'El dedo pulgar toma automáticamente la posición lateral.';
-
-function commonQuestions(prefix: string): PracticeQuestion[] {
-  return [
-    {
-      id: `${prefix}-paciente-1`, conceptId: 'posicion-paciente', type: 'choice', title: 'Preparación del paciente',
-      prompt: 'Selecciona la posición indicada para el paciente.',
-      options: [patientPosition, 'De pie junto a la mesa.', 'Acostado sobre la mesa.'], correctOption: patientPosition,
-      correctExplanation: `La posición indicada es: ${patientPosition}`
-    },
-    {
-      id: `${prefix}-paciente-2`, conceptId: 'posicion-paciente', type: 'completion', title: 'Completa la preparación',
-      prompt: 'El paciente debe estar colocado en un extremo de la mesa y…',
-      options: ['Cómodamente sentado.', 'De pie.', 'Acostado.'], correctOption: 'Cómodamente sentado.',
-      correctExplanation: patientPosition
-    },
-    {
-      id: `${prefix}-paciente-3`, conceptId: 'posicion-paciente', type: 'scenario', title: '¿Qué corregirías?',
-      prompt: 'El paciente está de pie junto a la mesa. ¿Qué posición corresponde según lo aprendido?',
-      options: [patientPosition, 'Mantenerlo de pie.', 'Colocarlo acostado.'], correctOption: patientPosition,
-      correctExplanation: `Debe estar ${patientPosition.toLocaleLowerCase('es')}`
-    },
-    {
-      id: `${prefix}-mesa-1`, conceptId: 'altura-mesa', type: 'choice', title: 'Altura de trabajo',
-      prompt: '¿Qué debe colocarse a la altura de la mesa?',
-      options: ['La mano y el antebrazo.', 'Solo el dedo pulgar.', 'Solo el antebrazo.'], correctOption: 'La mano y el antebrazo.',
-      correctExplanation: tablePosition
-    },
-    {
-      id: `${prefix}-mesa-2`, conceptId: 'altura-mesa', type: 'completion', title: 'Completa el primer paso',
-      prompt: 'Colocar ___ a la altura de la mesa.',
-      options: ['La mano y el antebrazo.', 'El dedo pulgar únicamente.', 'La mano únicamente.'], correctOption: 'La mano y el antebrazo.',
-      correctExplanation: tablePosition
-    },
-    {
-      id: `${prefix}-rayo-1`, conceptId: 'rayo-central', type: 'completion', title: 'Completa el rayo central',
-      prompt: 'El rayo central debe dirigirse…',
-      options: [centralRay, 'Paralelo al dedo pulgar.', 'Perpendicular al extremo distal del pulgar.'], correctOption: centralRay,
-      correctExplanation: `En esta proyección, el rayo central debe ser ${centralRay.toLocaleLowerCase('es')}`
-    },
-    {
-      id: `${prefix}-rayo-2`, conceptId: 'rayo-central', type: 'choice', title: 'Dirección del rayo',
-      prompt: '¿Cuál es la dirección indicada del rayo central?',
-      options: ['Perpendicular.', 'Paralela.', 'Oblicua.'], correctOption: 'Perpendicular.',
-      correctExplanation: centralRay
-    },
-    {
-      id: `${prefix}-rayo-3`, conceptId: 'rayo-central', type: 'choice', title: 'Punto del rayo central',
-      prompt: '¿A qué articulación debe dirigirse el rayo central?',
-      options: ['Articulación metacarpofalángica del dedo pulgar.', 'Articulación interfalángica del dedo pulgar.', 'Articulación de la muñeca.'], correctOption: 'Articulación metacarpofalángica del dedo pulgar.',
-      correctExplanation: centralRay
-    },
-    {
-      id: `${prefix}-rayo-4`, conceptId: 'rayo-central', type: 'scenario', title: 'Detecta la corrección',
-      prompt: 'Se propone dirigir el rayo paralelo al pulgar. ¿Qué debe corregirse?',
-      options: [centralRay, 'Mantener el rayo paralelo.', 'Dirigirlo a la muñeca.'], correctOption: centralRay,
-      correctExplanation: `La indicación correcta es: ${centralRay}`
-    },
-    {
-      id: `${prefix}-dfr-1`, conceptId: 'dfr', type: 'choice', title: 'Configura la DFR',
-      prompt: '¿Cuál es la DFR indicada?', options: ['40 pulgadas.', '30 pulgadas.', '60 pulgadas.'], correctOption: dfr,
-      correctExplanation: `La DFR indicada es de ${dfr}`
-    },
-    {
-      id: `${prefix}-dfr-2`, conceptId: 'dfr', type: 'completion', title: 'Completa la distancia',
-      prompt: 'La DFR utilizada es de ___ pulgadas.', options: ['40', '30', '50'], correctOption: '40',
-      correctExplanation: `La DFR indicada es de ${dfr}`
-    },
-    {
-      id: `${prefix}-dfr-3`, conceptId: 'dfr', type: 'scenario', title: 'Corrige la DFR',
-      prompt: 'Un estudiante utiliza una DFR de 30 pulgadas. ¿Qué valor debería utilizar?',
-      options: ['40 pulgadas.', 'Mantener 30 pulgadas.', '60 pulgadas.'], correctOption: dfr,
-      correctExplanation: `Debe utilizar ${dfr}`
-    },
-    {
-      id: `${prefix}-dfr-4`, conceptId: 'dfr', type: 'true-false', title: 'Comprueba la DFR',
-      prompt: 'La DFR indicada para esta proyección es de 40 pulgadas.', options: ['Verdadero.', 'Falso.'], correctOption: 'Verdadero.',
-      correctExplanation: `Es correcto: la DFR es de ${dfr}`
-    },
-    {
-      id: `${prefix}-anatomia-1`, conceptId: 'estructuras', type: 'multi-select', title: 'Verificación anatómica',
-      prompt: 'Selecciona todas las estructuras que deben observarse.',
-      options: [...structures, 'Falange media', 'Segundo metacarpiano'], correctOptions: structures,
-      correctExplanation: `Deben observarse: ${structures.join(', ')}.`
-    },
-    {
-      id: `${prefix}-anatomia-2`, conceptId: 'estructuras', type: 'choice', title: 'Estructura distal',
-      prompt: '¿Cuál de estas estructuras debe observarse?',
-      options: ['Falange distal', 'Falange media', 'Segundo metacarpiano'], correctOption: 'Falange distal',
-      correctExplanation: `Deben observarse: ${structures.join(', ')}.`
-    },
-    {
-      id: `${prefix}-anatomia-3`, conceptId: 'estructuras', type: 'choice', title: 'Estructura proximal',
-      prompt: 'Identifica otra estructura que debe observarse.',
-      options: ['Falange proximal', 'Falange media', 'Segundo metacarpiano'], correctOption: 'Falange proximal',
-      correctExplanation: `Deben observarse: ${structures.join(', ')}.`
-    },
-    {
-      id: `${prefix}-anatomia-4`, conceptId: 'estructuras', type: 'completion', title: 'Completa la anatomía',
-      prompt: 'Además de las falanges distal y proximal, debe observarse…',
-      options: ['Primer metacarpiano', 'Segundo metacarpiano', 'Falange media'], correctOption: 'Primer metacarpiano',
-      correctExplanation: `Deben observarse: ${structures.join(', ')}.`
-    }
-  ];
-}
-
-const apQuestions: PracticeQuestion[] = [
-  ...commonQuestions('ap'),
-  {
-    id: 'ap-posicion-1', conceptId: 'posicion-parte-ap', type: 'choice', title: 'Orientación AP',
-    prompt: '¿Qué acción lleva el dedo pulgar a la posición AP?',
-    options: [apPosition, pronePosition, lateralFingerPosition], correctOption: apPosition, correctExplanation: apPosition
-  },
-  {
-    id: 'ap-posicion-2', conceptId: 'posicion-parte-ap', type: 'completion', title: 'Completa la posición AP',
-    prompt: 'Rotar la mano ___ hasta que el dedo pulgar esté en posición AP.',
-    options: ['Internamente.', 'A posición prona.', 'Sin rotarla.'], correctOption: 'Internamente.', correctExplanation: apPosition
-  },
-  {
-    id: 'ap-posicion-3', conceptId: 'posicion-parte-ap', type: 'scenario', title: '¿Qué corregirías?',
-    prompt: 'La mano se colocó en prona, pero se busca la proyección AP. ¿Qué acción corresponde?',
-    options: [apPosition, pronePosition, lateralFingerPosition], correctOption: apPosition, correctExplanation: apPosition
-  },
-  {
-    id: 'ap-posicion-4', conceptId: 'posicion-parte-ap', type: 'true-false', title: 'Reconoce la orientación',
-    prompt: 'Para obtener AP, la mano se rota internamente hasta que el pulgar quede en posición AP.',
-    options: ['Verdadero.', 'Falso.'], correctOption: 'Verdadero.', correctExplanation: apPosition
-  },
-  {
-    id: 'ap-secuencia-1', conceptId: 'secuencia-ap', type: 'order', title: 'Ordena el posicionamiento',
-    prompt: 'Toca los pasos en el orden indicado.', options: [apPosition, tablePosition], correctOrder: [tablePosition, apPosition],
-    correctExplanation: `Primero: ${tablePosition} Después: ${apPosition}`
-  },
-  {
-    id: 'ap-diferencia-1', conceptId: 'diferencias-proyeccion', type: 'choice', title: 'Distingue la proyección',
-    prompt: '¿Qué instrucción pertenece específicamente a AP?',
-    options: [apPosition, obliqueFingerPosition, lateralFingerPosition], correctOption: apPosition, correctExplanation: apPosition
-  },
-  {
-    id: 'ap-siguiente-1', conceptId: 'secuencia-ap', type: 'completion', title: 'Siguiente paso',
-    prompt: 'Después de colocar mano y antebrazo a la altura de la mesa, para AP corresponde…',
-    options: [apPosition, pronePosition, lateralFingerPosition], correctOption: apPosition, correctExplanation: apPosition
-  }
+const ap: PracticeQuestion[] = [
+  q('ap-1','paciente','choice','¿Cómo debe colocarse el paciente para realizar la proyección AP del dedo pulgar?',['De pie junto a la mesa','Sentado cómodamente en un extremo de la mesa','Decúbito supino','Sentado de espaldas a la mesa'],'Sentado cómodamente en un extremo de la mesa'),
+  q('ap-2','parte-anatomica','choice','¿A qué altura deben colocarse la mano y el antebrazo?',['Por encima del hombro','Debajo de la mesa','A la altura de la mesa','Sobre el tórax'],'A la altura de la mesa'),
+  q('ap-3','parte-anatomica','choice','Para obtener la posición AP del pulgar, ¿qué debe hacerse con la mano?',['Rotarla internamente','Mantenerla sin rotación','Elevarla','Flexionarla'],'Rotarla internamente'),
+  q('ap-4','parte-anatomica','true-false','Para la AP del pulgar, la mano debe rotarse internamente hasta conseguir la posición AP del dedo.',['Verdadero','Falso'],'Verdadero'),
+  q('ap-5','paciente','completion','Completa: el paciente debe estar cómodamente ______ en un extremo de la mesa.',['acostado','sentado','arrodillado','inclinado'],'sentado'),
+  q('ap-6','dfr','choice','¿Cuál es la DFR indicada para la AP del dedo pulgar?',['20 pulgadas','30 pulgadas','40 pulgadas','60 pulgadas'],'40 pulgadas'),
+  t('ap-7','dfr','Completa: DFR = ___ pulgadas.',['40','40 pulgadas'],'40'),
+  q('ap-8','dfr','scenario','Un estudiante prepara una DFR de 30 pulgadas. ¿Qué debe corregir?',['Cambiarla a 40 pulgadas','Dejarla en 30 pulgadas','Cambiarla a 20 pulgadas','Cambiar la posición del paciente'],'Cambiarla a 40 pulgadas'),
+  q('ap-9','rayo-central','choice','¿Cómo debe dirigirse el rayo central?',['Paralelo','Perpendicular','Oblicuo','Tangencial'],'Perpendicular'),
+  q('ap-10','rayo-central','choice','¿A qué articulación se dirige el rayo central?',['Interfalángica distal','Radiocarpiana','Metacarpofalángica del pulgar','Del codo'],'Metacarpofalángica del pulgar'),
+  q('ap-11','rayo-central','completion','Completa: el rayo central debe ser ______ a la articulación metacarpofalángica del pulgar.',['paralelo','perpendicular','lateral','oblicuo'],'perpendicular'),
+  q('ap-12','rayo-central','scenario','Un estudiante dirige el rayo central de forma oblicua. Según la técnica estudiada, ¿qué debe corregir?',['Hacerlo perpendicular','Hacerlo paralelo','Cambiar la DFR','Levantar la mano'],'Hacerlo perpendicular'),
+  q('ap-13','anatomia','choice','¿Cuál de estas estructuras debe observarse?',['Falange distal','Radio','Cúbito','Húmero'],'Falange distal'),
+  q('ap-14','anatomia','choice','¿Cuál de estas estructuras también debe visualizarse?',['Segundo metacarpiano','Primer metacarpiano','Escafoides únicamente','Radio proximal'],'Primer metacarpiano'),
+  q('ap-15','anatomia','choice','¿Qué falanges deben observarse?',['Solo distal','Solo proximal','Distal y proximal','Ninguna'],'Distal y proximal'),
+  m('ap-16','anatomia','Selecciona todas las estructuras que deben observarse en la proyección.',['Falange distal','Falange proximal','Primer metacarpiano','Húmero'],['Falange distal','Falange proximal','Primer metacarpiano']),
+  q('ap-17','anatomia','true-false','El primer metacarpiano forma parte de las estructuras que deben observarse.',['Verdadero','Falso'],'Verdadero'),
+  q('ap-18','anatomia','true-false','Únicamente debe observarse la falange distal.',['Verdadero','Falso'],'Falso'),
+  q('ap-19','anatomia','choice','¿Cuál conjunto corresponde a las estructuras indicadas?',['Falange distal + falange proximal + primer metacarpiano','Radio + cúbito + carpos','Falange distal + húmero','Metacarpianos 2.º–5.º'],'Falange distal + falange proximal + primer metacarpiano'),
+  q('ap-20','parte-anatomica','scenario','El paciente está correctamente sentado, pero la mano y el antebrazo no están a la altura de la mesa. ¿Qué debe corregirse?',['La DFR','La altura de mano y antebrazo','El rayo central','Nada'],'La altura de mano y antebrazo'),
+  q('ap-21','secuencia','completion','La mano y el antebrazo ya están a la altura de la mesa. ¿Qué acción permite llevar el pulgar a AP?',['Rotar internamente la mano','Flexionar el codo 90°','Elevar el brazo','Rotar el tronco'],'Rotar internamente la mano'),
+  q('ap-22','parte-anatomica','choice','¿Qué objetivo tiene la rotación interna de la mano dentro del posicionamiento descrito?',['Colocar el pulgar en AP','Cambiar la DFR','Colocar el pulgar lateral','Cambiar la posición del paciente'],'Colocar el pulgar en AP'),
+  q('ap-23','rayo-central','scenario','Paciente sentado cómodamente, mano y antebrazo a la altura de la mesa, pulgar en AP y DFR de 40 pulgadas, pero el rayo central está paralelo a la articulación metacarpofalángica. ¿Qué está mal?',['Paciente','DFR','Rayo central','Posición del pulgar'],'Rayo central'),
+  q('ap-24','dfr','scenario','Todo el posicionamiento es correcto, pero la DFR es de 60 pulgadas. ¿Qué está mal?',['Rayo central','DFR','Paciente','Rotación'],'DFR'),
+  q('ap-25','parte-anatomica','scenario','El rayo central es perpendicular a la articulación metacarpofalángica y la DFR es de 40 pulgadas, pero no se ha rotado internamente la mano para llevar el pulgar a AP. ¿Qué debe corregirse?',['Posición de la parte anatómica','Rayo central','DFR','Nada'],'Posición de la parte anatómica'),
+  o('ap-26','secuencia','Ordena el posicionamiento básico de la proyección AP del dedo pulgar.',['Sentar al paciente al extremo de la mesa','Rotar internamente la mano hasta obtener AP del pulgar','Colocar mano y antebrazo a la altura de la mesa','El DFR debe tener una distancia de 40 pulgadas','Dirigir el rayo central perpendicular a la articulación metacarpofalángica'],['Sentar al paciente al extremo de la mesa','Colocar mano y antebrazo a la altura de la mesa','Rotar internamente la mano hasta obtener AP del pulgar','Dirigir el rayo central perpendicular a la articulación metacarpofalángica','El DFR debe tener una distancia de 40 pulgadas']),
+  q('ap-27','secuencia','completion','Ya colocaste al paciente cómodamente al extremo de la mesa. ¿Qué corresponde hacer con la extremidad?',['Colocar mano y antebrazo a la altura de la mesa','Elevarla sobre la cabeza','Llevarla detrás del tronco','Dejarla debajo de la mesa'],'Colocar mano y antebrazo a la altura de la mesa'),
+  q('ap-28','secuencia','completion','Ya colocaste mano y antebrazo a la altura de la mesa. ¿Cuál es el siguiente movimiento descrito para obtener AP?',['Rotación interna de la mano','Flexión del hombro','Rotación del tronco','Flexión de muñeca'],'Rotación interna de la mano'),
+  q('ap-29','integracion','choice','¿Cuál configuración coincide completamente con la técnica estudiada?',['Sentado + mano/antebrazo a nivel de mesa + rotación interna + RC perpendicular a MCF + DFR 40 pulgadas','De pie + RC oblicuo + DFR 40 pulgadas','Sentado + RC paralelo + DFR 30 pulgadas','Decúbito + RC perpendicular + DFR 60 pulgadas'],'Sentado + mano/antebrazo a nivel de mesa + rotación interna + RC perpendicular a MCF + DFR 40 pulgadas'),
+  q('ap-30','integracion','true-false','Paciente sentado cómodamente al extremo de la mesa; mano y antebrazo al nivel de la mesa; rotación interna hasta AP del pulgar; rayo central perpendicular a la articulación metacarpofalángica; DFR 40 pulgadas. ¿Coincide con el posicionamiento estudiado?',['Sí','No'],'Sí')
 ];
 
-const obliqueQuestions: PracticeQuestion[] = [
-  ...commonQuestions('oblicua'),
-  {
-    id: 'oblicua-posicion-1', conceptId: 'posicion-parte-oblicua', type: 'choice', title: 'Orientación oblicua',
-    prompt: '¿Cómo se coloca la mano para la proyección Oblicua?', options: [pronePosition, apPosition, lateralFingerPosition], correctOption: pronePosition,
-    correctExplanation: `${obliqueFingerPosition} ${pronePosition}`
-  },
-  {
-    id: 'oblicua-dedos-1', conceptId: 'posicion-parte-oblicua', type: 'choice', title: 'Posición de los dedos',
-    prompt: '¿Qué debe hacerse con los dedos de la mano?', options: [obliqueFingerPosition, lateralFingerPosition, 'Mantener los dedos flexionados.'], correctOption: obliqueFingerPosition,
-    correctExplanation: `${obliqueFingerPosition} ${pronePosition}`
-  },
-  {
-    id: 'oblicua-posicion-2', conceptId: 'posicion-parte-oblicua', type: 'completion', title: 'Completa la orientación',
-    prompt: 'Extender los dedos y colocar la mano en posición…', options: ['Prona.', 'AP.', 'Lateral.'], correctOption: 'Prona.',
-    correctExplanation: `${obliqueFingerPosition} ${pronePosition}`
-  },
-  {
-    id: 'oblicua-posicion-3', conceptId: 'posicion-parte-oblicua', type: 'scenario', title: '¿Qué corregirías?',
-    prompt: 'Los dedos están flexionados durante la preparación de Oblicua. ¿Qué corresponde?',
-    options: [obliqueFingerPosition, lateralFingerPosition, apPosition], correctOption: obliqueFingerPosition,
-    correctExplanation: `${obliqueFingerPosition} ${pronePosition}`
-  },
-  {
-    id: 'oblicua-secuencia-1', conceptId: 'secuencia-oblicua', type: 'order', title: 'Ordena el posicionamiento',
-    prompt: 'Toca los pasos en el orden indicado.', options: [pronePosition, tablePosition, obliqueFingerPosition],
-    correctOrder: [tablePosition, obliqueFingerPosition, pronePosition], correctExplanation: `${tablePosition} ${obliqueFingerPosition} ${pronePosition}`
-  },
-  {
-    id: 'oblicua-diferencia-1', conceptId: 'diferencias-proyeccion', type: 'choice', title: 'Distingue la proyección',
-    prompt: '¿Qué combinación corresponde a Oblicua?',
-    options: [`${obliqueFingerPosition} ${pronePosition}`, apPosition, `${pronePosition} ${lateralFingerPosition}`],
-    correctOption: `${obliqueFingerPosition} ${pronePosition}`, correctExplanation: `${obliqueFingerPosition} ${pronePosition}`
-  },
-  {
-    id: 'oblicua-siguiente-1', conceptId: 'secuencia-oblicua', type: 'completion', title: 'Siguiente paso',
-    prompt: 'Después de colocar mano y antebrazo a la altura de la mesa, corresponde…',
-    options: [obliqueFingerPosition, lateralFingerPosition, apPosition], correctOption: obliqueFingerPosition,
-    correctExplanation: `${obliqueFingerPosition} Después: ${pronePosition}`
-  },
-  {
-    id: 'oblicua-prona-1', conceptId: 'posicion-parte-oblicua', type: 'true-false', title: 'Comprueba la orientación',
-    prompt: 'En Oblicua, la mano se coloca en posición prona.', options: ['Verdadero.', 'Falso.'], correctOption: 'Verdadero.',
-    correctExplanation: `${obliqueFingerPosition} ${pronePosition}`
-  }
+const oblicua: PracticeQuestion[] = [
+  q('oblicua-1','paciente','choice','¿En qué posición debe estar el paciente para la proyección oblicua del dedo pulgar?',['De pie','Sentado cómodamente en un extremo de la mesa','Decúbito prono','Sentado lejos de la mesa'],'Sentado cómodamente en un extremo de la mesa'),
+  q('oblicua-2','parte-anatomica','choice','¿Dónde deben situarse la mano y el antebrazo durante la proyección oblicua?',['A la altura de la mesa','Sobre el hombro','Debajo de la mesa','Sobre el abdomen'],'A la altura de la mesa'),
+  q('oblicua-3','parte-anatomica','choice','¿Qué debe hacerse con los dedos de la mano para esta proyección?',['Flexionarlos todos','Extenderlos','Cerrar el puño','Flexionar solo el pulgar'],'Extenderlos'),
+  q('oblicua-4','parte-anatomica','choice','¿En qué posición debe colocarse la mano para obtener la oblicua descrita?',['Supina','Prono','Lateral estricta','Elevada'],'Prono'),
+  q('oblicua-5','parte-anatomica','true-false','Verdadero o falso: en la oblicua del pulgar se colocan los dedos extendidos y la mano en posición prono.',['Verdadero','Falso'],'Verdadero'),
+  q('oblicua-6','parte-anatomica','completion','Completa: mano y antebrazo deben quedar a la altura de la ______.',['cabeza','mesa','cadera','rodilla'],'mesa'),
+  q('oblicua-7','parte-anatomica','scenario','Un estudiante mantiene los dedos flexionados. ¿Qué debe corregir según la técnica oblicua estudiada?',['Extender los dedos','Cambiar la DFR','Levantar el antebrazo','Girar el tronco'],'Extender los dedos'),
+  q('oblicua-8','parte-anatomica','scenario','La mano está en posición supina. ¿Qué cambio corresponde para la oblicua del pulgar?',['Colocarla prono','Mantenerla supina','Colocarla sobre el tórax','Flexionar el codo'],'Colocarla prono'),
+  q('oblicua-9','rayo-central','choice','¿Cómo debe incidir el rayo central?',['Perpendicular','Paralelo','Tangencial','Oblicuo'],'Perpendicular'),
+  q('oblicua-10','rayo-central','choice','¿A qué articulación se dirige el rayo central?',['Metacarpofalángica del dedo pulgar','Radiocarpiana','Codo','Interfalángica del índice'],'Metacarpofalángica del dedo pulgar'),
+  q('oblicua-11','rayo-central','completion','Completa: el rayo central es perpendicular a la articulación ______ del dedo pulgar.',['radiocarpiana','metacarpofalángica','del codo','esternoclavicular'],'metacarpofalángica'),
+  q('oblicua-12','dfr','choice','¿Cuál es la DFR indicada?',['24 pulgadas','30 pulgadas','40 pulgadas','72 pulgadas'],'40 pulgadas'),
+  q('oblicua-13','dfr','true-false','Verdadero o falso: una DFR de 40 pulgadas coincide con la técnica oblicua proporcionada.',['Verdadero','Falso'],'Verdadero'),
+  q('oblicua-14','dfr','scenario','Si el equipo está preparado a 60 pulgadas, ¿qué dato debe modificarse?',['DFR a 40 pulgadas','RC a paralelo','Paciente a decúbito','Dedos a flexión'],'DFR a 40 pulgadas'),
+  q('oblicua-15','anatomia','choice','¿Cuál de estas estructuras debe observarse en la imagen?',['Falange proximal del pulgar','Húmero','Cúbito','Escápula'],'Falange proximal del pulgar'),
+  m('oblicua-16','anatomia','Selecciona todas las estructuras indicadas para esta proyección.',['Falange distal','Falange proximal','Primer metacarpiano','Clavícula'],['Falange distal','Falange proximal','Primer metacarpiano']),
+  q('oblicua-17','anatomia','choice','¿Qué metacarpiano debe formar parte de las estructuras observadas?',['Primero','Segundo','Tercero','Quinto'],'Primero'),
+  q('oblicua-18','anatomia','true-false','Verdadero o falso: la falange distal y la proximal forman parte de las estructuras anatómicas esperadas.',['Verdadero','Falso'],'Verdadero'),
+  q('oblicua-19','anatomia','choice','¿Cuál elemento NO pertenece al grupo de estructuras proporcionado para el pulgar?',['Falange distal','Falange proximal','Primer metacarpiano','Húmero'],'Húmero'),
+  q('oblicua-20','integracion','choice','El paciente ya está sentado correctamente. ¿Qué combinación describe la colocación de la extremidad?',['Mano y antebrazo a nivel de mesa + dedos extendidos + mano prono','Mano elevada + puño cerrado','Mano supina + dedos flexionados','Antebrazo debajo de la mesa'],'Mano y antebrazo a nivel de mesa + dedos extendidos + mano prono'),
+  q('oblicua-21','parte-anatomica','choice','¿Qué acción distingue la posición de la mano en esta oblicua según el material proporcionado?',['Colocarla prono','Rotarla internamente hasta AP','Colocarla supina','Elevarla'],'Colocarla prono'),
+  q('oblicua-22','secuencia','completion','¿Qué debe ocurrir antes de dejar la mano en prono según la secuencia descrita?',['Colocar mano y antebrazo a la altura de la mesa y extender los dedos','Cambiar DFR a 60 pulgadas','Flexionar dedos 2.º–5.º a 90°','Colocar al paciente de pie'],'Colocar mano y antebrazo a la altura de la mesa y extender los dedos'),
+  o('oblicua-23','secuencia','Ordena los pasos básicos de la posición de la parte anatómica.',['Extender los dedos','Colocar mano y antebrazo a la altura de la mesa','Colocar la mano en posición prona'],['Colocar mano y antebrazo a la altura de la mesa','Extender los dedos','Colocar la mano en posición prona']),
+  q('oblicua-24','integracion','true-false','Paciente sentado, mano y antebrazo a nivel de mesa, dedos extendidos y mano prono; RC perpendicular a la articulación metacarpofalángica del pulgar y DFR 40 pulgadas. ¿La configuración coincide con lo estudiado?',['Sí','No'],'Sí'),
+  q('oblicua-25','rayo-central','scenario','Todo está correcto excepto que el rayo central está paralelo a la articulación metacarpofalángica del pulgar. ¿Qué debe modificarse?',['Hacer el RC perpendicular','Flexionar los dedos','Cambiar a supino','Cambiar DFR a 30 pulgadas'],'Hacer el RC perpendicular'),
+  q('oblicua-26','integracion','choice','¿Cuál combinación contiene DOS datos correctos de la proyección oblicua?',['Mano prona + DFR 40 pulgadas','Mano supina + DFR 30 pulgadas','Puño cerrado + RC paralelo','Paciente de pie + DFR 60 pulgadas'],'Mano prona + DFR 40 pulgadas'),
+  q('oblicua-27','parte-anatomica','scenario','Si la mano ya está prona pero los dedos permanecen flexionados, ¿qué parte del posicionamiento falta corregir?',['Extender los dedos','Cambiar el RC','Cambiar la DFR','Cambiar la posición del paciente'],'Extender los dedos'),
+  q('oblicua-28','integracion','choice','¿Cuál afirmación resume correctamente el rayo central y la DFR?',['RC perpendicular a MCF + DFR 40 pulgadas','RC paralelo a MCF + DFR 40 pulgadas','RC perpendicular al codo + DFR 30 pulgadas','RC oblicuo + DFR 60 pulgadas'],'RC perpendicular a MCF + DFR 40 pulgadas'),
+  m('oblicua-29','parte-anatomica','En una revisión rápida, ¿qué tres elementos de la parte anatómica comprobarías?',['Mano y antebrazo a nivel de mesa','Dedos extendidos','Mano prona','Mano sobre el hombro'],['Mano y antebrazo a nivel de mesa','Dedos extendidos','Mano prona']),
+  q('oblicua-30','integracion','choice','Caso final: el paciente está cómodamente sentado al extremo de la mesa; mano y antebrazo a la altura de la mesa; dedos extendidos; mano prona; RC perpendicular a la MCF del pulgar; DFR 40 pulgadas. ¿Qué proyección corresponde?',['AP','Oblicua','Lateral','Ninguna'],'Oblicua')
 ];
 
-const lateralQuestions: PracticeQuestion[] = [
-  ...commonQuestions('lateral'),
-  {
-    id: 'lateral-prona-1', conceptId: 'posicion-parte-lateral', type: 'choice', title: 'Orientación de la mano',
-    prompt: '¿En qué posición debe colocarse la mano?', options: [pronePosition, apPosition, 'Con la mano sin apoyar.'], correctOption: pronePosition,
-    correctExplanation: pronePosition
-  },
-  {
-    id: 'lateral-dedos-1', conceptId: 'dedos-lateral', type: 'choice', title: 'Posición de los dedos',
-    prompt: '¿Qué dedos se flexionan?', options: ['Del 2.º al 5.º.', 'Solo el dedo pulgar.', 'Del 1.º al 3.º.'], correctOption: 'Del 2.º al 5.º.',
-    correctExplanation: lateralFingerPosition
-  },
-  {
-    id: 'lateral-dedos-2', conceptId: 'dedos-lateral', type: 'completion', title: 'Completa la flexión',
-    prompt: 'Flexionar los dedos del 2.º al 5.º a ___ grados.', options: ['90', '45', '30'], correctOption: '90', correctExplanation: lateralFingerPosition
-  },
-  {
-    id: 'lateral-dedos-3', conceptId: 'dedos-lateral', type: 'scenario', title: '¿Qué corregirías?',
-    prompt: 'Los dedos del 2.º al 5.º permanecen extendidos. ¿Qué acción corresponde?',
-    options: [lateralFingerPosition, obliqueFingerPosition, apPosition], correctOption: lateralFingerPosition,
-    correctExplanation: `${lateralFingerPosition} ${lateralResult}`
-  },
-  {
-    id: 'lateral-resultado-1', conceptId: 'resultado-lateral', type: 'choice', title: 'Resultado del posicionamiento',
-    prompt: '¿Qué ocurre con el pulgar después de realizar los pasos indicados?',
-    options: [lateralResult, 'Toma automáticamente la posición AP.', 'Permanece en posición prona.'], correctOption: lateralResult,
-    correctExplanation: lateralResult
-  },
-  {
-    id: 'lateral-resultado-2', conceptId: 'resultado-lateral', type: 'true-false', title: 'Comprueba el resultado',
-    prompt: 'Al flexionar los dedos indicados, el pulgar toma automáticamente la posición lateral.',
-    options: ['Verdadero.', 'Falso.'], correctOption: 'Verdadero.', correctExplanation: `${lateralFingerPosition} ${lateralResult}`
-  },
-  {
-    id: 'lateral-secuencia-1', conceptId: 'secuencia-lateral', type: 'order', title: 'Construye la posición lateral',
-    prompt: 'Toca los pasos en el orden indicado.',
-    options: [lateralFingerPosition, tablePosition, lateralResult, pronePosition],
-    correctOrder: [tablePosition, pronePosition, lateralFingerPosition, lateralResult],
-    correctExplanation: `${tablePosition} ${pronePosition} ${lateralFingerPosition} ${lateralResult}`
-  },
-  {
-    id: 'lateral-diferencia-1', conceptId: 'diferencias-proyeccion', type: 'choice', title: 'Distingue la proyección',
-    prompt: '¿Qué instrucción identifica a Lateral frente a AP y Oblicua?',
-    options: [lateralFingerPosition, apPosition, obliqueFingerPosition], correctOption: lateralFingerPosition,
-    correctExplanation: `${lateralFingerPosition} ${lateralResult}`
-  },
-  {
-    id: 'lateral-siguiente-1', conceptId: 'secuencia-lateral', type: 'completion', title: 'Siguiente paso',
-    prompt: 'Después de colocar la mano en posición prona, corresponde…',
-    options: [lateralFingerPosition, obliqueFingerPosition, apPosition], correctOption: lateralFingerPosition,
-    correctExplanation: `${lateralFingerPosition} ${lateralResult}`
-  },
-  {
-    id: 'lateral-prona-2', conceptId: 'posicion-parte-lateral', type: 'true-false', title: 'Comprueba la orientación',
-    prompt: 'En Lateral, la mano se coloca en posición prona antes de flexionar los dedos.',
-    options: ['Verdadero.', 'Falso.'], correctOption: 'Verdadero.',
-    correctExplanation: `${pronePosition} ${lateralFingerPosition}`
-  }
+const lateral: PracticeQuestion[] = [
+  q('lateral-1','paciente','choice','¿Cómo se coloca inicialmente al paciente para la proyección lateral del dedo pulgar?',['Sentado cómodamente en un extremo de la mesa','De pie','Decúbito supino','Arrodillado'],'Sentado cómodamente en un extremo de la mesa'),
+  q('lateral-2','parte-anatomica','choice','¿A qué nivel deben estar la mano y el antebrazo?',['A la altura de la mesa','Por encima de la cabeza','Debajo de la silla','A nivel del hombro'],'A la altura de la mesa'),
+  q('lateral-3','parte-anatomica','choice','¿En qué posición se coloca la mano antes de flexionar los dedos?',['Prona','Supina','AP','Elevada'],'Prona'),
+  q('lateral-4','parte-anatomica','choice','¿Qué dedos deben flexionarse para obtener la posición lateral del pulgar?',['Del 2.º al 5.º','Solo el pulgar','1.º y 2.º','Solo 4.º y 5.º'],'Del 2.º al 5.º'),
+  q('lateral-5','parte-anatomica','choice','¿Cuántos grados deben flexionarse los dedos del 2.º al 5.º?',['30°','45°','90°','180°'],'90°'),
+  q('lateral-6','parte-anatomica','completion','Completa: al flexionar los dedos del 2.º al 5.º a 90°, el pulgar toma automáticamente la posición ______.',['AP','lateral','prona','supina'],'lateral'),
+  q('lateral-7','parte-anatomica','true-false','Verdadero o falso: la mano se coloca en posición prona para preparar la lateral del pulgar.',['Verdadero','Falso'],'Verdadero'),
+  q('lateral-8','parte-anatomica','scenario','Un estudiante flexiona únicamente los dedos 4.º y 5.º. ¿Qué debe corregir?',['Flexionar del 2.º al 5.º','Cambiar DFR','Colocar mano supina','Elevar el brazo'],'Flexionar del 2.º al 5.º'),
+  q('lateral-9','parte-anatomica','scenario','Los dedos 2.º–5.º están flexionados a 45°. ¿Qué ajuste corresponde según la técnica estudiada?',['Llevarlos a 90°','Extenderlos completamente','Cambiar la DFR','Girar al paciente'],'Llevarlos a 90°'),
+  q('lateral-10','parte-anatomica','choice','¿Qué resultado produce la flexión indicada de los dedos 2.º–5.º?',['El pulgar adopta posición lateral','El pulgar adopta AP','Cambia la DFR','El RC se vuelve oblicuo'],'El pulgar adopta posición lateral'),
+  q('lateral-11','rayo-central','choice','¿Cómo debe dirigirse el rayo central?',['Perpendicular','Paralelo','Oblicuo','Horizontal al antebrazo'],'Perpendicular'),
+  q('lateral-12','rayo-central','choice','¿A qué articulación se dirige el rayo central?',['Metacarpofalángica del dedo pulgar','Radiocarpiana','Codo','Hombro'],'Metacarpofalángica del dedo pulgar'),
+  q('lateral-13','rayo-central','true-false','Verdadero o falso: el RC debe ser perpendicular a la articulación metacarpofalángica del pulgar.',['Verdadero','Falso'],'Verdadero'),
+  q('lateral-14','rayo-central','scenario','Si el RC está dirigido de forma oblicua, ¿qué corrección corresponde?',['Cambiar la mano a supina','Hacerlo paralelo','Hacerlo perpendicular a la articulación metacarpofalángica del pulgar','Flexionar el pulgar'],'Hacerlo perpendicular a la articulación metacarpofalángica del pulgar'),
+  q('lateral-15','dfr','choice','¿Cuál es la DFR de esta proyección?',['40 pulgadas','20 pulgadas','55 pulgadas','72 pulgadas'],'40 pulgadas'),
+  t('lateral-16','dfr','Completa: la distancia foco-receptor indicada es de ___ pulgadas.',['40','40 pulgadas'],'40'),
+  q('lateral-17','dfr','scenario','Una preparación utiliza 30 pulgadas de DFR. ¿Qué valor debe utilizarse según el material?',['40 pulgadas','30 pulgadas','20 pulgadas','60 pulgadas'],'40 pulgadas'),
+  m('lateral-18','anatomia','Selecciona las estructuras anatómicas que deben observarse.',['Falange distal','Falange proximal','Primer metacarpiano','Húmero'],['Falange distal','Falange proximal','Primer metacarpiano']),
+  q('lateral-19','anatomia','choice','¿Cuál de estas estructuras pertenece a la anatomía demostrada?',['Radio proximal','Clavícula','Escápula','Primer metacarpiano'],'Primer metacarpiano'),
+  q('lateral-20','anatomia','true-false','Verdadero o falso: deben observarse tanto la falange distal como la proximal.',['Verdadero','Falso'],'Verdadero'),
+  q('lateral-21','anatomia','choice','¿Cuál estructura NO está incluida en la lista proporcionada?',['Falange distal','Falange proximal','Primer metacarpiano','Cúbito'],'Cúbito'),
+  o('lateral-22','secuencia','Ordena la posición de la parte anatómica.',['Colocar mano y antebrazo a la altura de la mesa','El pulgar adopta posición lateral','Flexionar dedos 2.º–5.º a 90°','Colocar la mano en prono'],['Colocar mano y antebrazo a la altura de la mesa','Colocar la mano en prono','Flexionar dedos 2.º–5.º a 90°','El pulgar adopta posición lateral']),
+  q('lateral-23','secuencia','completion','La mano y el antebrazo ya están a nivel de la mesa y la mano está prona. ¿Qué acción sigue?',['Flexionar dedos 2.º–5.º a 90°','Rotar internamente hasta AP','Extender todos los dedos','Cambiar DFR'],'Flexionar dedos 2.º–5.º a 90°'),
+  q('lateral-24','secuencia','completion','¿Qué paso ocurre inmediatamente antes de que el pulgar tome automáticamente la posición lateral?',['Flexionar dedos 2.º–5.º a 90°','Sentar al paciente','Ajustar DFR a 40 pulgadas','Dirigir el RC'],'Flexionar dedos 2.º–5.º a 90°'),
+  q('lateral-25','parte-anatomica','scenario','Paciente sentado, mano prona y DFR 40 pulgadas, pero los dedos 2.º–5.º están extendidos. ¿Qué elemento debe corregirse para obtener la lateral?',['Cambiar DFR','Flexionar dedos 2.º–5.º a 90°','Colocar al paciente de pie','Hacer RC paralelo'],'Flexionar dedos 2.º–5.º a 90°'),
+  q('lateral-26','integracion','choice','¿Cuál configuración describe correctamente la parte anatómica para lateral?',['Mano prona + dedos 2.º–5.º flexionados 90°','Mano supina + dedos extendidos','Mano prona + dedos extendidos','Rotación interna de la mano hasta AP'],'Mano prona + dedos 2.º–5.º flexionados 90°'),
+  q('lateral-27','integracion','choice','¿Cuál combinación técnica es correcta?',['RC oblicuo + DFR 40 pulgadas','RC paralelo + DFR 30 pulgadas','RC perpendicular a la articulación metacarpofalángica del pulgar + DFR 40 pulgadas','RC perpendicular al codo + DFR 60 pulgadas'],'RC perpendicular a la articulación metacarpofalángica del pulgar + DFR 40 pulgadas'),
+  q('lateral-28','comparacion','choice','¿Qué dato permite diferenciar especialmente esta lateral de la oblicua descrita en el material?',['Flexión de los dedos 2.º–5.º a 90°','DFR de 40 pulgadas','Paciente sentado','RC perpendicular a MCF'],'Flexión de los dedos 2.º–5.º a 90°'),
+  q('lateral-29','integracion','choice','En una comprobación final, ¿cuál conjunto es correcto?',['Paciente sentado + mano/antebrazo a nivel de mesa + mano prona + dedos 2.º–5.º a 90° + RC perpendicular a la articulación metacarpofalángica del pulgar + DFR 40 pulgadas','Paciente de pie + mano supina + RC paralelo','Paciente sentado + dedos extendidos + DFR 30 pulgadas','Decúbito + mano elevada + RC oblicuo'],'Paciente sentado + mano/antebrazo a nivel de mesa + mano prona + dedos 2.º–5.º a 90° + RC perpendicular a la articulación metacarpofalángica del pulgar + DFR 40 pulgadas'),
+  q('lateral-30','integracion','choice','Caso final: el paciente está sentado al extremo de la mesa; mano y antebrazo a nivel de mesa; mano prona; dedos 2.º–5.º flexionados 90°; el pulgar adopta posición lateral; RC perpendicular a la MCF; DFR 40 pulgadas. ¿Qué proyección corresponde?',['AP','Oblicua','Lateral','Ninguna'],'Lateral')
 ];
 
-export const thumbQuestionBanks: Record<ProjectionId, PracticeQuestion[]> = {
-  ap: apQuestions,
-  oblicua: obliqueQuestions,
-  lateral: lateralQuestions
-};
-
-export function getThumbQuestionBank(projectionId: ProjectionId) {
-  return thumbQuestionBanks[projectionId];
-}
+export const thumbQuestionBanks: Record<ProjectionId, PracticeQuestion[]> = { ap, oblicua, lateral };
+export function getThumbQuestionBank(projectionId: ProjectionId) { return thumbQuestionBanks[projectionId]; }
+export const thumbQuestionCount = 30;

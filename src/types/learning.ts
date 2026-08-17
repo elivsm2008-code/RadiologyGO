@@ -13,6 +13,7 @@ export type PracticeResult = {
   incorrectAnswers: number;
   projectionId: string;
   questionResults?: QuestionResult[];
+  totalQuestionCount?: number;
 };
 
 export type QuestionResult = {
@@ -38,6 +39,20 @@ export type ProjectionProgress = {
   practiceCount: number;
 };
 
+export type QuestionBankProgress = {
+  hasCompletedInitialRound: boolean;
+  masteredQuestionIds: string[];
+  reinforcementQuestionIds: string[];
+};
+
+export type VerificationStatus = 'Bloqueada' | 'Disponible' | 'En progreso' | 'Verificada';
+
+export type KnowledgeVerificationProgress = QuestionBankProgress & {
+  completedAt: string | null;
+  selectedQuestionIds: string[];
+  status: VerificationStatus;
+};
+
 export type Achievement = {
   earnedAt: string;
   id: string;
@@ -56,9 +71,11 @@ export type AchievementDefinition = {
 export type LearningProgress = {
   achievements: Achievement[];
   projections: Record<string, ProjectionProgress>;
+  questionBankProgress: Record<string, QuestionBankProgress>;
   questionHistory: Record<string, QuestionHistoryEntry>;
   recentQuestionIds: Record<string, string[]>;
   schemaVersion: number;
+  thumbVerification: KnowledgeVerificationProgress;
   xp: number;
 };
 
@@ -78,5 +95,13 @@ export type PracticeUpdate = {
   masteryGained: number;
   progress: LearningProgress;
   score: number;
+  xpGained: number;
+};
+
+export type QuestionAnswerUpdate = {
+  achievementsUnlocked: Achievement[];
+  levelAfter: number;
+  levelBefore: number;
+  progress: LearningProgress;
   xpGained: number;
 };

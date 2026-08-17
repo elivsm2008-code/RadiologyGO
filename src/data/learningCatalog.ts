@@ -63,6 +63,14 @@ export const achievementCatalog: AchievementDefinition[] = [
     description: 'Reconocimiento por dominar todas las proyecciones de Dedo pulgar.',
     requirement: 'Alcanza 100% en AP, Oblicua y Lateral.',
     xpReward: 100
+  },
+  {
+    id: 'dedo-pulgar-verificado',
+    code: 'DV',
+    title: 'Dedo Pulgar Verificado',
+    description: 'Certificación por completar la Verificación de conocimientos de Dedo pulgar.',
+    requirement: 'Domina las 30 preguntas de la Verificación de conocimientos.',
+    xpReward: 200
   }
 ];
 

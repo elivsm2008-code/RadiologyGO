@@ -1,13 +1,16 @@
 import { createContext, type PropsWithChildren, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
-import { applyPracticeResult, createInitialLearningProgress, recordPracticeSessionStarted } from '@/src/services/progressEngine';
+import { applyPracticeResult, applyQuestionAnswer, completeQuestionRound, createInitialLearningProgress, initializeThumbVerification, recordPracticeSessionStarted } from '@/src/services/progressEngine';
 import { loadLearningProgress, saveLearningProgress } from '@/src/services/progressStorage';
-import type { LearningProgress, PracticeResult, PracticeUpdate } from '@/src/types/learning';
+import type { LearningProgress, PracticeResult, PracticeUpdate, QuestionAnswerUpdate } from '@/src/types/learning';
 
 type LearningProgressContextValue = {
   isHydrated: boolean;
   progress: LearningProgress;
   registerPractice: (result: PracticeResult) => PracticeUpdate;
+  answerQuestion: (scopeId: string, questionId: string, conceptId: string, correct: boolean, total: number, isVerification?: boolean) => QuestionAnswerUpdate;
+  completeRound: (scopeId: string, score: number, isVerification?: boolean) => LearningProgress;
+  initializeVerification: (questionIds: string[]) => LearningProgress;
   startPracticeSession: (projectionId: string, questionIds: string[]) => void;
 };
 
@@ -42,6 +45,24 @@ export function LearningProgressProvider({ children }: PropsWithChildren) {
       progressRef.current = update.progress;
       setProgress(update.progress);
       return update;
+    },
+    answerQuestion: (scopeId, questionId, conceptId, correct, total, isVerification = false) => {
+      const update = applyQuestionAnswer(progressRef.current, scopeId, questionId, conceptId, correct, total, isVerification);
+      progressRef.current = update.progress;
+      setProgress(update.progress);
+      return update;
+    },
+    completeRound: (scopeId, score, isVerification = false) => {
+      const updated = completeQuestionRound(progressRef.current, scopeId, score, isVerification);
+      progressRef.current = updated;
+      setProgress(updated);
+      return updated;
+    },
+    initializeVerification: (questionIds) => {
+      const updated = initializeThumbVerification(progressRef.current, questionIds);
+      progressRef.current = updated;
+      setProgress(updated);
+      return updated;
     },
     startPracticeSession: (projectionId, questionIds) => {
       const updated = recordPracticeSessionStarted(progressRef.current, projectionId, questionIds);

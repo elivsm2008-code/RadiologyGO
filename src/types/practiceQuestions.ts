@@ -24,4 +24,10 @@ export type OrderQuestion = QuestionBase & {
   type: 'order';
 };
 
-export type PracticeQuestion = ChoiceQuestion | MultiSelectQuestion | OrderQuestion;
+export type TextQuestion = QuestionBase & {
+  acceptedAnswers: string[];
+  options: [];
+  type: 'text';
+};
+
+export type PracticeQuestion = ChoiceQuestion | MultiSelectQuestion | OrderQuestion | TextQuestion;

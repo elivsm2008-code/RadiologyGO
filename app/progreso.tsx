@@ -82,6 +82,15 @@ export default function ProgressScreen() {
                     </View>
                   );
                 })}
+                <View style={styles.verificationRow}>
+                  <View style={styles.projectionCopy}>
+                    <Text style={styles.projectionTitle}>Verificación</Text>
+                    <Text style={styles.projectionStatus}>{progress.thumbVerification.status}</Text>
+                  </View>
+                  <View style={styles.projectionProgress}><MasteryBar value={(progress.thumbVerification.masteredQuestionIds.length / 30) * 100} /></View>
+                  <Text style={styles.projectionValue}>{Math.round((progress.thumbVerification.masteredQuestionIds.length / 30) * 100)}%</Text>
+                </View>
+                {progress.thumbVerification.status === 'Verificada' && <View style={styles.verifiedBanner}><Text style={styles.verifiedBannerTitle}>Dedo pulgar — Verificado</Text><Text style={styles.verifiedBannerText}>Verificación de conocimientos completada.</Text></View>}
               </View>
             </View>
 
@@ -165,6 +174,10 @@ const styles = StyleSheet.create({
   projectionStatus: { marginTop: 2, color: '#7A8D9C', fontSize: 9 },
   projectionProgress: { flex: 1, marginHorizontal: 10 },
   projectionValue: { width: 38, color: colors.azulOscuro, fontSize: 12, fontWeight: '800', textAlign: 'right' },
+  verificationRow: { flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#E7EDF1', paddingTop: 14 },
+  verifiedBanner: { borderWidth: 1, borderColor: '#B8E2F7', borderRadius: 16, backgroundColor: '#EFFAFF', padding: 14 },
+  verifiedBannerTitle: { color: colors.azulOscuro, fontSize: 14, fontWeight: '800' },
+  verifiedBannerText: { marginTop: 3, color: '#647987', fontSize: 11 },
   badges: { gap: 11 },
   badgeDetail: { marginTop: 12, borderLeftWidth: 4, borderLeftColor: colors.morado, borderRadius: 16, backgroundColor: colors.blanco, padding: 16 },
   badgeDetailEyebrow: { color: colors.morado, fontSize: 10, fontWeight: '800', letterSpacing: 1 },

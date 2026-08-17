@@ -1,41 +1,44 @@
 import { achievementCatalog, getAchievementDefinition, getProjectionCatalogItem, getStudyCatalogItem, projectionCatalog, studyCatalog } from '@/src/data/learningCatalog';
-import type { Achievement, LearningProgress, LevelProgress, MasteryStatus, PracticeResult, PracticeUpdate, ProjectionProgress } from '@/src/types/learning';
+import type { Achievement, LearningProgress, LevelProgress, MasteryStatus, PracticeResult, PracticeUpdate, ProjectionProgress, QuestionAnswerUpdate, QuestionBankProgress } from '@/src/types/learning';
 
 const emptyProjection = (): ProjectionProgress => ({ bestScore: 0, lastPractice: null, mastery: 0, practiceCount: 0 });
+const emptyBankProgress = (): QuestionBankProgress => ({ hasCompletedInitialRound: false, masteredQuestionIds: [], reinforcementQuestionIds: [] });
+const emptyVerification = () => ({ ...emptyBankProgress(), completedAt: null, selectedQuestionIds: [], status: 'Bloqueada' as const });
 
 export function createInitialLearningProgress(): LearningProgress {
   return {
     achievements: [],
-    projections: Object.fromEntries(projectionCatalog.map((projection) => [projection.id, emptyProjection()])),
-    questionHistory: {},
-    recentQuestionIds: {},
-    schemaVersion: 2,
-    xp: 0
+    projections: Object.fromEntries(projectionCatalog.map((item) => [item.id, emptyProjection()])),
+    questionBankProgress: Object.fromEntries(projectionCatalog.map((item) => [item.id, emptyBankProgress()])),
+    questionHistory: {}, recentQuestionIds: {}, schemaVersion: 3, thumbVerification: emptyVerification(), xp: 0
   };
 }
 
 export function normalizeLearningProgress(value?: Partial<LearningProgress> | null): LearningProgress {
   const initial = createInitialLearningProgress();
   if (!value || typeof value !== 'object') return initial;
-
+  const isCurrent = value.schemaVersion === 3;
+  const banks = Object.fromEntries(projectionCatalog.map((item) => {
+    const stored = isCurrent ? value.questionBankProgress?.[item.id] : undefined;
+    return [item.id, { ...emptyBankProgress(), ...(stored ?? {}) }];
+  }));
+  const projections = Object.fromEntries(projectionCatalog.map((item) => {
+    const stored = value.projections?.[item.id];
+    const mastery = Math.round(((banks[item.id]?.masteredQuestionIds.length ?? 0) / 30) * 100);
+    return [item.id, { ...emptyProjection(), ...(stored ?? {}), mastery }];
+  }));
+  const verification = isCurrent ? { ...emptyVerification(), ...(value.thumbVerification ?? {}) } : emptyVerification();
   return {
-    achievements: Array.isArray(value.achievements) ? value.achievements : [],
-    projections: Object.fromEntries(projectionCatalog.map((projection) => [
-      projection.id,
-      { ...emptyProjection(), ...(value.projections?.[projection.id] ?? {}) }
-    ])),
+    achievements: Array.isArray(value.achievements) ? value.achievements : [], projections, questionBankProgress: banks,
     questionHistory: value.questionHistory && typeof value.questionHistory === 'object' ? value.questionHistory : {},
     recentQuestionIds: value.recentQuestionIds && typeof value.recentQuestionIds === 'object' ? value.recentQuestionIds : {},
-    schemaVersion: 2,
+    schemaVersion: 3, thumbVerification: verification,
     xp: typeof value.xp === 'number' && value.xp >= 0 ? value.xp : 0
   };
 }
 
 export function recordPracticeSessionStarted(current: LearningProgress, projectionId: string, questionIds: string[]) {
-  return {
-    ...current,
-    recentQuestionIds: { ...current.recentQuestionIds, [projectionId]: questionIds }
-  };
+  return { ...current, recentQuestionIds: { ...current.recentQuestionIds, [projectionId]: questionIds } };
 }
 
 export function getMasteryStatus(mastery: number): MasteryStatus {
@@ -48,142 +51,93 @@ export function getMasteryStatus(mastery: number): MasteryStatus {
 }
 
 export function calculateAverageMastery(progress: LearningProgress, projectionIds: string[]) {
-  if (projectionIds.length === 0) return 0;
-  const total = projectionIds.reduce((sum, id) => sum + (progress.projections[id]?.mastery ?? 0), 0);
-  return Math.round(total / projectionIds.length);
+  if (!projectionIds.length) return 0;
+  return Math.round(projectionIds.reduce((sum, id) => sum + (progress.projections[id]?.mastery ?? 0), 0) / projectionIds.length);
 }
+export const calculateStudyMastery = (progress: LearningProgress, studyId: string) => calculateAverageMastery(progress, getStudyCatalogItem(studyId)?.projectionIds ?? []);
+export const calculateRegionMastery = (progress: LearningProgress, regionId: string) => calculateAverageMastery(progress, studyCatalog.filter((study) => study.regionId === regionId).flatMap((study) => study.projectionIds));
+export const calculateThumbMastery = (progress: LearningProgress) => calculateStudyMastery(progress, 'dedo-pulgar');
 
-export function calculateStudyMastery(progress: LearningProgress, studyId: string) {
-  return calculateAverageMastery(progress, getStudyCatalogItem(studyId)?.projectionIds ?? []);
-}
-
-export function calculateRegionMastery(progress: LearningProgress, regionId: string) {
-  const projectionIds = studyCatalog.filter((study) => study.regionId === regionId).flatMap((study) => study.projectionIds);
-  return calculateAverageMastery(progress, projectionIds);
-}
-
-export function calculateThumbMastery(progress: LearningProgress) {
-  return calculateStudyMastery(progress, 'dedo-pulgar');
-}
-
-function totalXpForLevel(level: number) {
-  const completedLevels = Math.max(0, level - 1);
-  return completedLevels * 100 + 25 * completedLevels * Math.max(0, completedLevels - 1);
-}
-
+function totalXpForLevel(level: number) { const completed = Math.max(0, level - 1); return completed * 100 + 25 * completed * Math.max(0, completed - 1); }
 export function calculateLevelProgress(xp: number): LevelProgress {
-  let level = 1;
-  while (xp >= totalXpForLevel(level + 1)) level += 1;
-  const currentLevelXp = totalXpForLevel(level);
-  const nextLevelTotalXp = totalXpForLevel(level + 1);
-  const xpNeededForLevel = nextLevelTotalXp - currentLevelXp;
-  const xpIntoLevel = xp - currentLevelXp;
-  return {
-    currentLevelXp,
-    level,
-    nextLevelTotalXp,
-    progressPercent: Math.round((xpIntoLevel / xpNeededForLevel) * 100),
-    xpIntoLevel,
-    xpNeededForLevel
-  };
+  let level = 1; while (xp >= totalXpForLevel(level + 1)) level += 1;
+  const currentLevelXp = totalXpForLevel(level), nextLevelTotalXp = totalXpForLevel(level + 1);
+  const xpNeededForLevel = nextLevelTotalXp - currentLevelXp, xpIntoLevel = xp - currentLevelXp;
+  return { currentLevelXp, level, nextLevelTotalXp, progressPercent: Math.round((xpIntoLevel / xpNeededForLevel) * 100), xpIntoLevel, xpNeededForLevel };
 }
-
 export function getProgressSummary(progress: LearningProgress) {
-  return {
-    badgesEarned: progress.achievements.length,
-    masteredProjections: projectionCatalog.filter((projection) => progress.projections[projection.id]?.mastery === 100).length,
-    totalPractices: Object.values(progress.projections).reduce((total, projection) => total + projection.practiceCount, 0)
-  };
+  return { badgesEarned: progress.achievements.length, masteredProjections: projectionCatalog.filter((item) => progress.projections[item.id]?.mastery === 100).length, totalPractices: Object.values(progress.projections).reduce((total, item) => total + item.practiceCount, 0) };
 }
 
-function calculateMasteryGain(currentMastery: number, score: number) {
-  if (score < 50) return 0;
-  const performanceGain = score >= 95 ? 20 : score >= 80 ? 12 : score >= 65 ? 7 : 3;
-  const masteryFactor = currentMastery >= 98 ? 0.1 : currentMastery >= 90 ? 0.25 : currentMastery >= 75 ? 0.45 : currentMastery >= 50 ? 0.65 : 1;
-  return Math.max(1, Math.round(performanceGain * masteryFactor));
+function unlock(owned: Achievement[], id: string, earnedAt: string) {
+  if (owned.some((item) => item.id === id)) return null;
+  const definition = getAchievementDefinition(id); return definition ? ({ earnedAt, id, title: definition.title } satisfies Achievement) : null;
 }
+const unique = (items: string[]) => [...new Set(items)];
 
-function unlockAchievement(achievements: Achievement[], achievementId: string, earnedAt: string) {
-  if (achievements.some((achievement) => achievement.id === achievementId)) return null;
-  const definition = getAchievementDefinition(achievementId);
-  if (!definition) return null;
-  return { earnedAt, id: definition.id, title: definition.title } satisfies Achievement;
-}
-
-export function applyPracticeResult(current: LearningProgress, result: PracticeResult, practicedAt = new Date().toISOString()): PracticeUpdate {
-  const projectionItem = getProjectionCatalogItem(result.projectionId);
-  const totalAnswers = result.correctAnswers + result.incorrectAnswers;
+export function applyQuestionAnswer(current: LearningProgress, scopeId: string, questionId: string, conceptId: string, correct: boolean, totalQuestionCount: number, isVerification = false, answeredAt = new Date().toISOString()): QuestionAnswerUpdate {
   const levelBefore = calculateLevelProgress(current.xp).level;
-  if (!projectionItem || totalAnswers <= 0) {
-    return { achievementsUnlocked: [], levelAfter: levelBefore, levelBefore, masteryGained: 0, progress: current, score: 0, xpGained: 0 };
-  }
-
-  const score = Math.round((result.correctAnswers / totalAnswers) * 100);
-  const previousProjection = current.projections[result.projectionId] ?? emptyProjection();
-  const masteryGained = Math.min(100 - previousProjection.mastery, calculateMasteryGain(previousProjection.mastery, score));
-  const mastery = previousProjection.mastery + masteryGained;
+  const source = isVerification ? current.thumbVerification : (current.questionBankProgress[scopeId] ?? emptyBankProgress());
+  const wasMastered = source.masteredQuestionIds.includes(questionId);
+  const masteredQuestionIds = correct ? unique([...source.masteredQuestionIds, questionId]) : source.masteredQuestionIds;
+  const reinforcementQuestionIds = correct
+    ? source.reinforcementQuestionIds.filter((id) => id !== questionId)
+    : wasMastered ? source.reinforcementQuestionIds : unique([...source.reinforcementQuestionIds, questionId]);
+  const hasCompletedInitialRound = source.hasCompletedInitialRound || unique([...masteredQuestionIds, ...reinforcementQuestionIds]).length >= totalQuestionCount;
   const achievementsUnlocked: Achievement[] = [];
-  let xpGained = Math.round(score / 10) + result.correctAnswers * 2;
+  let xpGained = correct && !wasMastered ? 2 : 0;
+  let projections = current.projections;
+  let questionBankProgress = current.questionBankProgress;
+  let thumbVerification = current.thumbVerification;
 
-  const projections = {
-    ...current.projections,
-    [result.projectionId]: {
-      bestScore: Math.max(previousProjection.bestScore, score),
-      lastPractice: practicedAt,
-      mastery,
-      practiceCount: previousProjection.practiceCount + 1
+  if (isVerification) {
+    const completed = masteredQuestionIds.length === totalQuestionCount;
+    thumbVerification = { ...current.thumbVerification, hasCompletedInitialRound, masteredQuestionIds, reinforcementQuestionIds, status: completed ? 'Verificada' : 'En progreso', completedAt: completed ? (current.thumbVerification.completedAt ?? answeredAt) : null };
+    if (completed) {
+      const achievement = unlock(current.achievements, 'dedo-pulgar-verificado', answeredAt);
+      if (achievement) { achievementsUnlocked.push(achievement); xpGained += getAchievementDefinition(achievement.id)?.xpReward ?? 0; }
     }
-  };
-
-  const questionHistory = { ...current.questionHistory };
-  result.questionResults?.forEach((questionResult) => {
-    const previous = questionHistory[questionResult.questionId];
-    questionHistory[questionResult.questionId] = {
-      conceptId: questionResult.conceptId,
-      correctCount: (previous?.correctCount ?? 0) + (questionResult.correct ? 1 : 0),
-      incorrectCount: (previous?.incorrectCount ?? 0) + (questionResult.correct ? 0 : 1),
-      lastAnsweredCorrectly: questionResult.correct,
-      lastSeenAt: practicedAt,
-      projectionId: result.projectionId,
-      seenCount: (previous?.seenCount ?? 0) + 1
-    };
-  });
-
-  if (mastery === 100) {
-    const achievement = unlockAchievement(current.achievements, projectionItem.achievementId, practicedAt);
-    if (achievement) {
-      achievementsUnlocked.push(achievement);
-      xpGained += getAchievementDefinition(achievement.id)?.xpReward ?? 0;
+  } else {
+    const mastery = Math.round((masteredQuestionIds.length / totalQuestionCount) * 100);
+    questionBankProgress = { ...current.questionBankProgress, [scopeId]: { hasCompletedInitialRound, masteredQuestionIds, reinforcementQuestionIds } };
+    projections = { ...current.projections, [scopeId]: { ...(current.projections[scopeId] ?? emptyProjection()), mastery } };
+    const projection = getProjectionCatalogItem(scopeId);
+    if (mastery === 100 && projection) {
+      const achievement = unlock(current.achievements, projection.achievementId, answeredAt);
+      if (achievement) { achievementsUnlocked.push(achievement); xpGained += getAchievementDefinition(achievement.id)?.xpReward ?? 0; }
+    }
+    const study = projection ? getStudyCatalogItem(projection.studyId) : undefined;
+    if (study && study.projectionIds.every((id) => projections[id]?.mastery === 100)) {
+      const achievement = unlock([...current.achievements, ...achievementsUnlocked], study.achievementId, answeredAt);
+      if (achievement) { achievementsUnlocked.push(achievement); xpGained += getAchievementDefinition(achievement.id)?.xpReward ?? 0; }
+      if (thumbVerification.status === 'Bloqueada') thumbVerification = { ...thumbVerification, status: 'Disponible' };
     }
   }
 
-  const study = getStudyCatalogItem(projectionItem.studyId);
-  if (study && study.projectionIds.every((id) => projections[id]?.mastery === 100)) {
-    const achievement = unlockAchievement([...current.achievements, ...achievementsUnlocked], study.achievementId, practicedAt);
-    if (achievement) {
-      achievementsUnlocked.push(achievement);
-      xpGained += getAchievementDefinition(achievement.id)?.xpReward ?? 0;
-    }
-  }
+  const previousHistory = current.questionHistory[questionId];
+  const questionHistory = { ...current.questionHistory, [questionId]: { conceptId, correctCount: (previousHistory?.correctCount ?? 0) + (correct ? 1 : 0), incorrectCount: (previousHistory?.incorrectCount ?? 0) + (correct ? 0 : 1), lastAnsweredCorrectly: correct, lastSeenAt: answeredAt, projectionId: scopeId, seenCount: (previousHistory?.seenCount ?? 0) + 1 } };
+  const progress = { ...current, achievements: [...current.achievements, ...achievementsUnlocked], projections, questionBankProgress, questionHistory, schemaVersion: 3, thumbVerification, xp: current.xp + xpGained };
+  return { achievementsUnlocked, levelAfter: calculateLevelProgress(progress.xp).level, levelBefore, progress, xpGained };
+}
 
-  const progress = {
-    achievements: [...current.achievements, ...achievementsUnlocked],
-    projections,
-    questionHistory,
-    recentQuestionIds: current.recentQuestionIds,
-    schemaVersion: 2,
-    xp: current.xp + xpGained
-  };
+export function completeQuestionRound(current: LearningProgress, scopeId: string, score: number, isVerification = false, completedAt = new Date().toISOString()) {
+  if (isVerification) return current;
+  const previous = current.projections[scopeId] ?? emptyProjection();
+  return { ...current, projections: { ...current.projections, [scopeId]: { ...previous, bestScore: Math.max(previous.bestScore, score), lastPractice: completedAt, practiceCount: previous.practiceCount + 1 } } };
+}
 
-  return {
-    achievementsUnlocked,
-    levelAfter: calculateLevelProgress(progress.xp).level,
-    levelBefore,
-    masteryGained,
-    progress,
-    score,
-    xpGained
-  };
+export function initializeThumbVerification(current: LearningProgress, selectedQuestionIds: string[]) {
+  if (current.thumbVerification.selectedQuestionIds.length || !['Disponible','En progreso'].includes(current.thumbVerification.status)) return current;
+  return { ...current, thumbVerification: { ...current.thumbVerification, selectedQuestionIds, status: 'En progreso' as const } };
+}
+
+// Compatibilidad temporal para consumidores anteriores.
+export function applyPracticeResult(current: LearningProgress, result: PracticeResult): PracticeUpdate {
+  const total = result.correctAnswers + result.incorrectAnswers;
+  const score = total ? Math.round((result.correctAnswers / total) * 100) : 0;
+  const progress = completeQuestionRound(current, result.projectionId, score);
+  const level = calculateLevelProgress(progress.xp).level;
+  return { achievementsUnlocked: [], levelAfter: level, levelBefore: level, masteryGained: 0, progress, score, xpGained: 0 };
 }
 
 export { achievementCatalog };
