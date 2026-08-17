@@ -35,8 +35,19 @@ export type QuestionHistoryEntry = {
 export type ProjectionProgress = {
   bestScore: number;
   lastPractice: string | null;
+  lastReviewCorrect: number | null;
+  lastReviewScore: number | null;
+  lastReviewTotal: number | null;
   mastery: number;
   practiceCount: number;
+};
+
+export type ProjectionReviewProgress = {
+  activeQuestionIds: string[];
+  correctQuestionIds: string[];
+  hasCompletedRound: boolean;
+  reinforcementQuestionIds: string[];
+  startedAt: string | null;
 };
 
 export type QuestionBankProgress = {
@@ -74,6 +85,7 @@ export type LearningProgress = {
   questionBankProgress: Record<string, QuestionBankProgress>;
   questionHistory: Record<string, QuestionHistoryEntry>;
   recentQuestionIds: Record<string, string[]>;
+  reviews: Record<string, ProjectionReviewProgress>;
   schemaVersion: number;
   thumbVerification: KnowledgeVerificationProgress;
   xp: number;

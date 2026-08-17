@@ -1,8 +1,9 @@
 import { achievementCatalog, getAchievementDefinition, getProjectionCatalogItem, getStudyCatalogItem, projectionCatalog, studyCatalog } from '@/src/data/learningCatalog';
-import type { Achievement, LearningProgress, LevelProgress, MasteryStatus, PracticeResult, PracticeUpdate, ProjectionProgress, QuestionAnswerUpdate, QuestionBankProgress } from '@/src/types/learning';
+import type { Achievement, LearningProgress, LevelProgress, MasteryStatus, PracticeResult, PracticeUpdate, ProjectionProgress, ProjectionReviewProgress, QuestionAnswerUpdate, QuestionBankProgress } from '@/src/types/learning';
 
-const emptyProjection = (): ProjectionProgress => ({ bestScore: 0, lastPractice: null, mastery: 0, practiceCount: 0 });
+const emptyProjection = (): ProjectionProgress => ({ bestScore: 0, lastPractice: null, lastReviewCorrect: null, lastReviewScore: null, lastReviewTotal: null, mastery: 0, practiceCount: 0 });
 const emptyBankProgress = (): QuestionBankProgress => ({ hasCompletedInitialRound: false, masteredQuestionIds: [], reinforcementQuestionIds: [] });
+const emptyReview = (): ProjectionReviewProgress => ({ activeQuestionIds: [], correctQuestionIds: [], hasCompletedRound: false, reinforcementQuestionIds: [], startedAt: null });
 const emptyVerification = () => ({ ...emptyBankProgress(), completedAt: null, selectedQuestionIds: [], status: 'Bloqueada' as const });
 
 export function createInitialLearningProgress(): LearningProgress {
@@ -10,16 +11,16 @@ export function createInitialLearningProgress(): LearningProgress {
     achievements: [],
     projections: Object.fromEntries(projectionCatalog.map((item) => [item.id, emptyProjection()])),
     questionBankProgress: Object.fromEntries(projectionCatalog.map((item) => [item.id, emptyBankProgress()])),
-    questionHistory: {}, recentQuestionIds: {}, schemaVersion: 3, thumbVerification: emptyVerification(), xp: 0
+    questionHistory: {}, recentQuestionIds: {}, reviews: Object.fromEntries(projectionCatalog.map((item) => [item.id, emptyReview()])), schemaVersion: 4, thumbVerification: emptyVerification(), xp: 0
   };
 }
 
 export function normalizeLearningProgress(value?: Partial<LearningProgress> | null): LearningProgress {
   const initial = createInitialLearningProgress();
   if (!value || typeof value !== 'object') return initial;
-  const isCurrent = value.schemaVersion === 3;
+  const hasQuestionMastery = (value.schemaVersion ?? 0) >= 3;
   const banks = Object.fromEntries(projectionCatalog.map((item) => {
-    const stored = isCurrent ? value.questionBankProgress?.[item.id] : undefined;
+    const stored = hasQuestionMastery ? value.questionBankProgress?.[item.id] : undefined;
     return [item.id, { ...emptyBankProgress(), ...(stored ?? {}) }];
   }));
   const projections = Object.fromEntries(projectionCatalog.map((item) => {
@@ -27,12 +28,13 @@ export function normalizeLearningProgress(value?: Partial<LearningProgress> | nu
     const mastery = Math.round(((banks[item.id]?.masteredQuestionIds.length ?? 0) / 30) * 100);
     return [item.id, { ...emptyProjection(), ...(stored ?? {}), mastery }];
   }));
-  const verification = isCurrent ? { ...emptyVerification(), ...(value.thumbVerification ?? {}) } : emptyVerification();
+  const verification = hasQuestionMastery ? { ...emptyVerification(), ...(value.thumbVerification ?? {}) } : emptyVerification();
   return {
     achievements: Array.isArray(value.achievements) ? value.achievements : [], projections, questionBankProgress: banks,
     questionHistory: value.questionHistory && typeof value.questionHistory === 'object' ? value.questionHistory : {},
     recentQuestionIds: value.recentQuestionIds && typeof value.recentQuestionIds === 'object' ? value.recentQuestionIds : {},
-    schemaVersion: 3, thumbVerification: verification,
+    reviews: Object.fromEntries(projectionCatalog.map((item) => [item.id, { ...emptyReview(), ...(value.reviews?.[item.id] ?? {}) }])),
+    schemaVersion: 4, thumbVerification: verification,
     xp: typeof value.xp === 'number' && value.xp >= 0 ? value.xp : 0
   };
 }
@@ -116,7 +118,7 @@ export function applyQuestionAnswer(current: LearningProgress, scopeId: string, 
 
   const previousHistory = current.questionHistory[questionId];
   const questionHistory = { ...current.questionHistory, [questionId]: { conceptId, correctCount: (previousHistory?.correctCount ?? 0) + (correct ? 1 : 0), incorrectCount: (previousHistory?.incorrectCount ?? 0) + (correct ? 0 : 1), lastAnsweredCorrectly: correct, lastSeenAt: answeredAt, projectionId: scopeId, seenCount: (previousHistory?.seenCount ?? 0) + 1 } };
-  const progress = { ...current, achievements: [...current.achievements, ...achievementsUnlocked], projections, questionBankProgress, questionHistory, schemaVersion: 3, thumbVerification, xp: current.xp + xpGained };
+  const progress = { ...current, achievements: [...current.achievements, ...achievementsUnlocked], projections, questionBankProgress, questionHistory, schemaVersion: 4, thumbVerification, xp: current.xp + xpGained };
   return { achievementsUnlocked, levelAfter: calculateLevelProgress(progress.xp).level, levelBefore, progress, xpGained };
 }
 
@@ -124,6 +126,52 @@ export function completeQuestionRound(current: LearningProgress, scopeId: string
   if (isVerification) return current;
   const previous = current.projections[scopeId] ?? emptyProjection();
   return { ...current, projections: { ...current.projections, [scopeId]: { ...previous, bestScore: Math.max(previous.bestScore, score), lastPractice: completedAt, practiceCount: previous.practiceCount + 1 } } };
+}
+
+export function startProjectionReview(current: LearningProgress, projectionId: string, questionIds: string[], startedAt = new Date().toISOString()) {
+  if (current.projections[projectionId]?.mastery !== 100) return current;
+  return {
+    ...current,
+    reviews: {
+      ...current.reviews,
+      [projectionId]: { activeQuestionIds: questionIds, correctQuestionIds: [], hasCompletedRound: false, reinforcementQuestionIds: [], startedAt }
+    }
+  };
+}
+
+export function applyReviewAnswer(current: LearningProgress, projectionId: string, questionId: string, correct: boolean) {
+  if (current.projections[projectionId]?.mastery !== 100) return current;
+  const review = current.reviews[projectionId] ?? emptyReview();
+  const correctQuestionIds = correct ? unique([...review.correctQuestionIds, questionId]) : review.correctQuestionIds;
+  const reinforcementQuestionIds = correct
+    ? review.reinforcementQuestionIds.filter((id) => id !== questionId)
+    : unique([...review.reinforcementQuestionIds, questionId]);
+  return { ...current, reviews: { ...current.reviews, [projectionId]: { ...review, correctQuestionIds, reinforcementQuestionIds } } };
+}
+
+export function completeProjectionReview(current: LearningProgress, projectionId: string, correctAnswers: number, totalAnswers: number, completedAt = new Date().toISOString()) {
+  if (current.projections[projectionId]?.mastery !== 100 || totalAnswers <= 0) return current;
+  const score = Math.round((correctAnswers / totalAnswers) * 100);
+  const projection = current.projections[projectionId];
+  const review = current.reviews[projectionId] ?? emptyReview();
+  if (review.hasCompletedRound) return current;
+  return {
+    ...current,
+    projections: {
+      ...current.projections,
+      [projectionId]: {
+        ...projection,
+        bestScore: Math.max(projection.bestScore, score),
+        lastPractice: completedAt,
+        lastReviewCorrect: correctAnswers,
+        lastReviewScore: score,
+        lastReviewTotal: totalAnswers,
+        mastery: 100,
+        practiceCount: projection.practiceCount + 1
+      }
+    },
+    reviews: { ...current.reviews, [projectionId]: { ...review, hasCompletedRound: true } }
+  };
 }
 
 export function initializeThumbVerification(current: LearningProgress, selectedQuestionIds: string[]) {

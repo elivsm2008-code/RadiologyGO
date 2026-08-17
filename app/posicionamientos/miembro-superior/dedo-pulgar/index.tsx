@@ -45,6 +45,7 @@ export default function ThumbScreen() {
         <View style={styles.list}>
           {thumbProjections.map((projection) => (
             <ProjectionMasteryCard
+              achievementTitle={progress.achievements.find((achievement) => achievement.id === `dominio-dedo-pulgar-${projection.id}`)?.title}
               key={projection.id}
               mastery={progress.projections[projection.id].mastery}
               onPress={() => router.push({

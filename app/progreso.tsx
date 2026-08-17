@@ -72,13 +72,16 @@ export default function ProgressScreen() {
                   const projection = progress.projections[projectionId];
                   const title = projectionId === 'ap' ? 'AP' : projectionId === 'oblicua' ? 'Oblicua' : 'Lateral';
                   return (
-                    <View key={projectionId} style={styles.projectionRow}>
-                      <View style={styles.projectionCopy}>
-                        <Text style={styles.projectionTitle}>{title}</Text>
-                        <Text style={styles.projectionStatus}>{getMasteryStatus(projection?.mastery ?? 0)}</Text>
+                    <View key={projectionId} style={styles.projectionBlock}>
+                      <View style={styles.projectionRow}>
+                        <View style={styles.projectionCopy}>
+                          <Text style={styles.projectionTitle}>{title}</Text>
+                          <Text style={styles.projectionStatus}>{getMasteryStatus(projection?.mastery ?? 0)}</Text>
+                        </View>
+                        <View style={styles.projectionProgress}><MasteryBar value={projection?.mastery ?? 0} /></View>
+                        <Text style={styles.projectionValue}>{projection?.mastery ?? 0}%</Text>
                       </View>
-                      <View style={styles.projectionProgress}><MasteryBar value={projection?.mastery ?? 0} /></View>
-                      <Text style={styles.projectionValue}>{projection?.mastery ?? 0}%</Text>
+                      {projection?.lastReviewScore != null && <Text style={styles.reviewStats}>Último repaso: {projection.lastReviewCorrect}/{projection.lastReviewTotal} · {projection.lastReviewScore}%   ·   Mejor resultado: {projection.bestScore}%   ·   Prácticas: {projection.practiceCount}</Text>}
                     </View>
                   );
                 })}
@@ -169,6 +172,8 @@ const styles = StyleSheet.create({
   studyCard: { borderWidth: 1, borderColor: '#E3EBF1', borderRadius: 22, backgroundColor: colors.blanco, padding: 17 },
   projectionList: { gap: 14, marginTop: 17 },
   projectionRow: { flexDirection: 'row', alignItems: 'center' },
+  projectionBlock: { gap: 7 },
+  reviewStats: { color: '#718492', fontSize: 10, lineHeight: 15 },
   projectionCopy: { width: 82 },
   projectionTitle: { color: colors.azulOscuro, fontSize: 13, fontWeight: '700' },
   projectionStatus: { marginTop: 2, color: '#7A8D9C', fontSize: 9 },

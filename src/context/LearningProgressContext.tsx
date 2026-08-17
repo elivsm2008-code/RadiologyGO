@@ -1,6 +1,6 @@
 import { createContext, type PropsWithChildren, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
-import { applyPracticeResult, applyQuestionAnswer, completeQuestionRound, createInitialLearningProgress, initializeThumbVerification, recordPracticeSessionStarted } from '@/src/services/progressEngine';
+import { applyPracticeResult, applyQuestionAnswer, applyReviewAnswer, completeProjectionReview, completeQuestionRound, createInitialLearningProgress, initializeThumbVerification, recordPracticeSessionStarted, startProjectionReview } from '@/src/services/progressEngine';
 import { loadLearningProgress, saveLearningProgress } from '@/src/services/progressStorage';
 import type { LearningProgress, PracticeResult, PracticeUpdate, QuestionAnswerUpdate } from '@/src/types/learning';
 
@@ -9,9 +9,12 @@ type LearningProgressContextValue = {
   progress: LearningProgress;
   registerPractice: (result: PracticeResult) => PracticeUpdate;
   answerQuestion: (scopeId: string, questionId: string, conceptId: string, correct: boolean, total: number, isVerification?: boolean) => QuestionAnswerUpdate;
+  answerReviewQuestion: (projectionId: string, questionId: string, correct: boolean) => LearningProgress;
+  completeReview: (projectionId: string, correct: number, total: number) => LearningProgress;
   completeRound: (scopeId: string, score: number, isVerification?: boolean) => LearningProgress;
   initializeVerification: (questionIds: string[]) => LearningProgress;
   startPracticeSession: (projectionId: string, questionIds: string[]) => void;
+  startReview: (projectionId: string, questionIds: string[]) => LearningProgress;
 };
 
 const LearningProgressContext = createContext<LearningProgressContextValue | null>(null);
@@ -52,6 +55,18 @@ export function LearningProgressProvider({ children }: PropsWithChildren) {
       setProgress(update.progress);
       return update;
     },
+    answerReviewQuestion: (projectionId, questionId, correct) => {
+      const updated = applyReviewAnswer(progressRef.current, projectionId, questionId, correct);
+      progressRef.current = updated;
+      setProgress(updated);
+      return updated;
+    },
+    completeReview: (projectionId, correct, total) => {
+      const updated = completeProjectionReview(progressRef.current, projectionId, correct, total);
+      progressRef.current = updated;
+      setProgress(updated);
+      return updated;
+    },
     completeRound: (scopeId, score, isVerification = false) => {
       const updated = completeQuestionRound(progressRef.current, scopeId, score, isVerification);
       progressRef.current = updated;
@@ -68,6 +83,12 @@ export function LearningProgressProvider({ children }: PropsWithChildren) {
       const updated = recordPracticeSessionStarted(progressRef.current, projectionId, questionIds);
       progressRef.current = updated;
       setProgress(updated);
+    },
+    startReview: (projectionId, questionIds) => {
+      const updated = startProjectionReview(progressRef.current, projectionId, questionIds);
+      progressRef.current = updated;
+      setProgress(updated);
+      return updated;
     }
   }), [isHydrated, progress]);
 

@@ -5,12 +5,13 @@ import { getMasteryStatus } from '@/src/services/progressEngine';
 import { MasteryBar } from './MasteryBar';
 
 type ProjectionMasteryCardProps = {
+  achievementTitle?: string;
   mastery: number;
   onPress: () => void;
   title: string;
 };
 
-export function ProjectionMasteryCard({ mastery, onPress, title }: ProjectionMasteryCardProps) {
+export function ProjectionMasteryCard({ achievementTitle, mastery, onPress, title }: ProjectionMasteryCardProps) {
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
       <View style={styles.topRow}>
@@ -23,6 +24,7 @@ export function ProjectionMasteryCard({ mastery, onPress, title }: ProjectionMas
         </View>
       </View>
       <MasteryBar value={mastery} />
+      {mastery === 100 && achievementTitle && <View style={styles.achievement}><View style={styles.achievementMark}><Text style={styles.achievementCode}>{title.slice(0, 2).toLocaleUpperCase('es')}</Text></View><Text style={styles.achievementText}>{achievementTitle}</Text></View>}
       <Text aria-hidden style={styles.arrow}>›</Text>
     </Pressable>
   );
@@ -36,5 +38,9 @@ const styles = StyleSheet.create({
   status: { marginTop: 4, color: '#617686', fontSize: 13, fontWeight: '600' },
   percentageBadge: { minWidth: 54, alignItems: 'center', borderRadius: 14, backgroundColor: '#EAF6FC', paddingHorizontal: 10, paddingVertical: 8 },
   percentage: { color: colors.azulOscuro, fontSize: 15, fontWeight: '800' },
+  achievement: { flexDirection: 'row', alignItems: 'center', marginTop: 13, borderRadius: 14, backgroundColor: '#EFFAFF', padding: 9 },
+  achievementMark: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.azulClaro, borderRadius: 15, backgroundColor: colors.azulOscuro },
+  achievementCode: { color: colors.blanco, fontSize: 8, fontWeight: '900' },
+  achievementText: { marginLeft: 9, color: colors.azulOscuro, fontSize: 11, fontWeight: '800' },
   arrow: { position: 'absolute', right: 17, top: 20, color: colors.azulClaro, fontSize: 27 }
 });

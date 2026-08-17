@@ -10,9 +10,10 @@ import { AchievementCelebration } from './AchievementCelebration';
 import { MasteryBar } from './MasteryBar';
 import { PracticeFeedback } from './PracticeFeedback';
 import { RayoCompanion } from './RayoCompanion';
+import { RewardCelebration } from './RewardCelebration';
 
 type Props = { bank: PracticeQuestion[]; isVerification?: boolean; scopeId: string; title: string };
-type Result = { achievements: Achievement[]; levelAfter: number; levelBefore: number; mastered: number; pending: number; score: number; xp: number };
+type Result = { achievements: Achievement[]; correct: number; isReview: boolean; levelAfter: number; levelBefore: number; mastered: number; pending: number; score: number; total: number; xp: number };
 const startMessages = ['¡Vamos! Tú puedes con esta proyección.','Un paso a la vez. Yo te acompaño.','¿Listo? Vamos a demostrar lo que sabes.','Cada práctica te acerca al dominio.','¡Vamos por ese 100%!'];
 const correctMessages = ['¡Excelente!','¡Eso es!','¡Muy bien! Sigue así.','¡Correcto! Vas dominando esta proyección.','¡Sabía que podías!'];
 const reviewMessages = ['Casi. Revisemos este paso.','Tranqui, equivocarse también enseña.','Vamos a revisarlo juntos.','Estuviste cerca. Inténtalo de nuevo.','Este paso necesita un poquito más de práctica.'];
@@ -27,7 +28,7 @@ function isCorrect(question: PracticeQuestion, selected: string[], textAnswer: s
 }
 
 export function QuestionMasteryPractice({ bank, isVerification = false, scopeId, title }: Props) {
-  const { answerQuestion, completeRound, isHydrated, progress, startPracticeSession } = useLearningProgress();
+  const { answerQuestion, answerReviewQuestion, completeReview, completeRound, isHydrated, progress, startPracticeSession, startReview } = useLearningProgress();
   const [questions, setQuestions] = useState<PracticeQuestion[]>([]);
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<string[]>([]);
@@ -43,10 +44,12 @@ export function QuestionMasteryPractice({ bank, isVerification = false, scopeId,
   const [levelBefore, setLevelBefore] = useState(1);
   const [levelAfter, setLevelAfter] = useState(1);
   const [result, setResult] = useState<Result | null>(null);
+  const [reviewMode, setReviewMode] = useState(false);
   const question = questions[index];
 
   const sourceFor = (source: LearningProgress) => isVerification ? source.thumbVerification : source.questionBankProgress[scopeId];
   const begin = (source: LearningProgress) => {
+    setReviewMode(false);
     const sourceProgress = sourceFor(source);
     const allowed = isVerification ? source.thumbVerification.selectedQuestionIds : bank.map((item) => item.id);
     const classified = new Set([...sourceProgress.masteredQuestionIds, ...sourceProgress.reinforcementQuestionIds]);
@@ -58,6 +61,20 @@ export function QuestionMasteryPractice({ bank, isVerification = false, scopeId,
     setLevelBefore(1); setLevelAfter(1);
     if (next.length) startPracticeSession(scopeId, next.map((item) => item.id));
   };
+  const beginReview = (source: LearningProgress) => {
+    const review = source.reviews[scopeId];
+    const classified = new Set([...review.correctQuestionIds, ...review.reinforcementQuestionIds]);
+    const unanswered = review.activeQuestionIds.filter((id) => !classified.has(id));
+    const ids = review.hasCompletedRound ? review.reinforcementQuestionIds : unanswered;
+    const next = ids.map((id) => bank.find((item) => item.id === id)).filter((item): item is PracticeQuestion => Boolean(item));
+    setReviewMode(true); setQuestions(next); setIndex(0); setSelected([]); setTextAnswer(''); setAnswered(false); setCorrect(false);
+    setCorrectCount(0); setIncorrectCount(0); setEarned([]); setXpEarned(0); setResult(null); setRayoMessage('Repasemos juntos. Tu dominio del 100% está protegido.');
+    if (next.length) startPracticeSession(`${scopeId}-review`, next.map((item) => item.id));
+  };
+  const launchReview = () => {
+    const updated = startReview(scopeId, bank.map((item) => item.id));
+    beginReview(updated);
+  };
   useEffect(() => { if (isHydrated) begin(progress); }, [isHydrated, scopeId]);
 
   const toggle = (option: string) => {
@@ -68,30 +85,59 @@ export function QuestionMasteryPractice({ bank, isVerification = false, scopeId,
   };
   const check = () => {
     const answerIsCorrect = isCorrect(question, selected, textAnswer);
-    const wasReinforcement = sourceFor(progress).reinforcementQuestionIds.includes(question.id);
-    const update = answerQuestion(scopeId, question.id, question.conceptId, answerIsCorrect, bank.length, isVerification);
+    const wasReinforcement = reviewMode ? progress.reviews[scopeId].reinforcementQuestionIds.includes(question.id) : sourceFor(progress).reinforcementQuestionIds.includes(question.id);
+    const update = reviewMode ? null : answerQuestion(scopeId, question.id, question.conceptId, answerIsCorrect, bank.length, isVerification);
+    if (reviewMode) answerReviewQuestion(scopeId, question.id, answerIsCorrect);
     setCorrect(answerIsCorrect); setAnswered(true); setRecoveredThisAnswer(answerIsCorrect && wasReinforcement);
     setCorrectCount((value) => value + (answerIsCorrect ? 1 : 0)); setIncorrectCount((value) => value + (answerIsCorrect ? 0 : 1));
-    setEarned((value) => [...value, ...update.achievementsUnlocked]); setXpEarned((value) => value + update.xpGained);
-    setLevelBefore((value) => value === 1 ? update.levelBefore : value); setLevelAfter(update.levelAfter);
+    if (update) {
+      setEarned((value) => [...value, ...update.achievementsUnlocked]); setXpEarned((value) => value + update.xpGained);
+      setLevelBefore((value) => value === 1 ? update.levelBefore : value); setLevelAfter(update.levelAfter);
+    }
     setRayoMessage(answerIsCorrect && wasReinforcement ? '¡Eso es! Ahora sí la tienes.' : pick(answerIsCorrect ? correctMessages : reviewMessages));
   };
   const next = () => {
     if (index < questions.length - 1) { setIndex(index + 1); setSelected([]); setTextAnswer(''); setAnswered(false); setCorrect(false); setRecoveredThisAnswer(false); setRayoMessage(pick(startMessages)); return; }
     const total = correctCount + incorrectCount;
     const score = total ? Math.round((correctCount / total) * 100) : 0;
-    const completed = completeRound(scopeId, score, isVerification);
-    const source = isVerification ? completed.thumbVerification : completed.questionBankProgress[scopeId];
-    setResult({ achievements: earned, levelAfter, levelBefore, mastered: source.masteredQuestionIds.length, pending: source.reinforcementQuestionIds.length, score, xp: xpEarned });
+    if (reviewMode) {
+      const completed = completeReview(scopeId, correctCount, total);
+      const review = completed.reviews[scopeId];
+      setResult({ achievements: [], correct: correctCount, isReview: true, levelAfter, levelBefore, mastered: bank.length, pending: review.reinforcementQuestionIds.length, score, total, xp: 0 });
+    } else {
+      const completed = completeRound(scopeId, score, isVerification);
+      const source = isVerification ? completed.thumbVerification : completed.questionBankProgress[scopeId];
+      setResult({ achievements: earned, correct: correctCount, isReview: false, levelAfter, levelBefore, mastered: source.masteredQuestionIds.length, pending: source.reinforcementQuestionIds.length, score, total, xp: xpEarned });
+    }
   };
 
   if (!isHydrated) return <View style={styles.card}><Text style={styles.muted}>Cargando tu progreso…</Text></View>;
   const currentSource = sourceFor(progress);
   if (!question && !result) {
     const done = currentSource.masteredQuestionIds.length === bank.length;
-    return <View style={styles.resultCard}><RayoCompanion message={done ? '¡Excelente! Has dominado esta proyección.' : 'Preparando tus preguntas pendientes.'} pose={done ? 'celebrate' : 'wave'} /><Text style={styles.resultScore}>{done ? '100%' : '0'}</Text><Text style={styles.resultLabel}>{done ? `${title} dominada` : 'No hay preguntas disponibles'}</Text></View>;
+    return <View style={styles.resultCard}>
+      <RayoCompanion message={done ? 'Esta proyección permanece dominada. Cuando quieras, podemos repasarla.' : 'Preparando tus preguntas pendientes.'} pose={done ? 'celebrate' : 'wave'} />
+      <Text style={styles.resultScore}>{done ? '100%' : '0'}</Text>
+      <Text style={styles.resultLabel}>{done ? `${title} · Dominada` : 'No hay preguntas disponibles'}</Text>
+      {done && !isVerification && <>
+        <View style={styles.dominionSeal}><Text style={styles.dominionSealText}>DOMINIO {title.toLocaleUpperCase('es')}</Text></View>
+        <Pressable onPress={launchReview} style={styles.primary}><Text style={styles.primaryText}>Seguir practicando</Text></Pressable>
+      </>}
+    </View>;
   }
   if (result) {
+    if (result.isReview) {
+      return <View style={styles.resultCard}>
+        <RayoCompanion message={result.pending ? '¡Buen repaso! Revisemos únicamente las que faltan.' : '¡Repaso completado! Tu dominio sigue intacto.'} pose={result.pending ? 'wave' : 'celebrate'} />
+        <Text style={styles.eyebrow}>REPASO COMPLETADO</Text>
+        <Text style={styles.resultScore}>{result.score}%</Text>
+        <Text style={styles.resultLabel}>{result.correct}/{result.total} correctas en este repaso</Text>
+        <View style={styles.historicalDomain}><Text style={styles.historicalLabel}>DOMINIO HISTÓRICO</Text><Text style={styles.historicalValue}>100% · Dominada</Text></View>
+        {!!result.pending && <Text style={styles.pending}>{result.pending} preguntas para reforzar</Text>}
+        {!!result.pending && <Pressable onPress={() => beginReview(progress)} style={styles.primary}><Text style={styles.primaryText}>Reforzar mis errores</Text></Pressable>}
+        {!result.pending && <Pressable onPress={launchReview} style={styles.primary}><Text style={styles.primaryText}>Realizar otro repaso</Text></Pressable>}
+      </View>;
+    }
     const complete = result.mastered === bank.length;
     const message = complete ? (isVerification ? '¡Verificación completada!' : '¡Excelente! Has dominado esta proyección.') : result.pending <= 3 ? `¡Ya casi! Solo nos faltan ${result.pending}.` : '¡Buen trabajo! Nos quedan algunas por reforzar.';
     return <View style={styles.resultCard}>
@@ -101,7 +147,9 @@ export function QuestionMasteryPractice({ bank, isVerification = false, scopeId,
       <Text style={styles.resultLabel}>{result.mastered} de {bank.length} preguntas dominadas</Text>
       <View style={styles.progress}><MasteryBar value={(result.mastered / bank.length) * 100} /></View>
       {!complete && <Text style={styles.pending}>{result.pending} preguntas por reforzar</Text>}
-      {result.levelAfter > result.levelBefore && <RayoCompanion message="¡Subiste de nivel!" pose="celebrate" />}
+      {complete && !isVerification && <RewardCelebration code={title.slice(0, 2).toLocaleUpperCase('es')} eyebrow="PROYECCIÓN DOMINADA" message="¡Proyección dominada!" subtitle={`Has completado correctamente las ${bank.length} preguntas de ${title}.`} title={`Dominio ${title}`} />}
+      {result.achievements.some((achievement) => achievement.id === 'maestria-dedo-pulgar') && <RewardCelebration code="VC" eyebrow="NUEVA ETAPA" message="¡Verificación de conocimientos desbloqueada!" subtitle="AP, Oblicua y Lateral están dominadas." title="Verificación disponible" />}
+      {result.levelAfter > result.levelBefore && <RewardCelebration eyebrow="NUEVO NIVEL" message="¡Subiste de nivel!" subtitle="Rayo celebra contigo este nuevo avance." title={`Nivel ${result.levelAfter}`} />}
       {result.achievements.map((achievement) => { const definition = getAchievementDefinition(achievement.id); return definition ? <AchievementCelebration definition={definition} key={achievement.id} xpGained={definition.xpReward} /> : null; })}
       {!complete && <Pressable onPress={() => begin(progress)} style={styles.primary}><Text style={styles.primaryText}>Reforzar mis errores</Text></Pressable>}
     </View>;
@@ -122,5 +170,5 @@ export function QuestionMasteryPractice({ bank, isVerification = false, scopeId,
 }
 
 const styles = StyleSheet.create({
-  header:{gap:9,marginBottom:14},counter:{color:colors.azulOscuro,fontSize:11,fontWeight:'800',letterSpacing:.8},card:{borderRadius:22,backgroundColor:colors.blanco,padding:18},muted:{color:'#617686',textAlign:'center'},questionTitle:{color:colors.azulClaro,fontSize:11,fontWeight:'800',letterSpacing:1},prompt:{marginTop:9,color:colors.azulOscuro,fontSize:17,fontWeight:'700',lineHeight:24},options:{gap:10,marginTop:18},option:{minHeight:56,flexDirection:'row',alignItems:'center',borderWidth:1,borderColor:'#DDE6ED',borderRadius:16,padding:13},activeOption:{borderColor:colors.azulClaro,backgroundColor:'#F0F9FE'},selector:{width:18,height:18,borderWidth:2,borderColor:'#B9C8D2',borderRadius:9},activeSelector:{borderWidth:5,borderColor:colors.azulClaro},optionText:{flex:1,marginLeft:11,color:'#536A79',fontSize:13,lineHeight:19},activeText:{color:colors.azulOscuro,fontWeight:'600'},textInput:{marginTop:18,borderWidth:1,borderColor:'#DDE6ED',borderRadius:16,padding:15,color:colors.azulOscuro,fontSize:16},sequence:{gap:8,marginTop:16,borderRadius:16,backgroundColor:colors.grisClaro,padding:12},sequenceRow:{flexDirection:'row',alignItems:'center'},sequenceNumber:{width:25,height:25,textAlign:'center',textAlignVertical:'center',borderRadius:13,backgroundColor:colors.azulOscuro,color:colors.blanco,fontWeight:'800'},sequenceText:{flex:1,marginLeft:10,color:colors.azulOscuro,fontSize:12,lineHeight:17},reset:{alignSelf:'flex-end',color:colors.azulClaro,fontWeight:'700'},primary:{width:'100%',alignItems:'center',borderRadius:16,backgroundColor:colors.azulOscuro,paddingVertical:16,marginTop:18},disabled:{opacity:.35},primaryText:{color:colors.blanco,fontSize:15,fontWeight:'800'},resultCard:{alignItems:'center',borderRadius:24,backgroundColor:colors.blanco,padding:22},eyebrow:{marginTop:12,color:colors.azulClaro,fontSize:11,fontWeight:'800',letterSpacing:1.2},resultScore:{marginTop:10,color:colors.azulOscuro,fontSize:46,fontWeight:'800'},resultLabel:{color:'#6C8190',fontSize:13},progress:{width:'100%',marginTop:16},pending:{marginTop:14,color:colors.morado,fontSize:14,fontWeight:'800'}
+  header:{gap:9,marginBottom:14},counter:{color:colors.azulOscuro,fontSize:11,fontWeight:'800',letterSpacing:.8},card:{borderRadius:22,backgroundColor:colors.blanco,padding:18},muted:{color:'#617686',textAlign:'center'},questionTitle:{color:colors.azulClaro,fontSize:11,fontWeight:'800',letterSpacing:1},prompt:{marginTop:9,color:colors.azulOscuro,fontSize:17,fontWeight:'700',lineHeight:24},options:{gap:10,marginTop:18},option:{minHeight:56,flexDirection:'row',alignItems:'center',borderWidth:1,borderColor:'#DDE6ED',borderRadius:16,padding:13},activeOption:{borderColor:colors.azulClaro,backgroundColor:'#F0F9FE'},selector:{width:18,height:18,borderWidth:2,borderColor:'#B9C8D2',borderRadius:9},activeSelector:{borderWidth:5,borderColor:colors.azulClaro},optionText:{flex:1,marginLeft:11,color:'#536A79',fontSize:13,lineHeight:19},activeText:{color:colors.azulOscuro,fontWeight:'600'},textInput:{marginTop:18,borderWidth:1,borderColor:'#DDE6ED',borderRadius:16,padding:15,color:colors.azulOscuro,fontSize:16},sequence:{gap:8,marginTop:16,borderRadius:16,backgroundColor:colors.grisClaro,padding:12},sequenceRow:{flexDirection:'row',alignItems:'center'},sequenceNumber:{width:25,height:25,textAlign:'center',textAlignVertical:'center',borderRadius:13,backgroundColor:colors.azulOscuro,color:colors.blanco,fontWeight:'800'},sequenceText:{flex:1,marginLeft:10,color:colors.azulOscuro,fontSize:12,lineHeight:17},reset:{alignSelf:'flex-end',color:colors.azulClaro,fontWeight:'700'},primary:{width:'100%',alignItems:'center',borderRadius:16,backgroundColor:colors.azulOscuro,paddingVertical:16,marginTop:18},disabled:{opacity:.35},primaryText:{color:colors.blanco,fontSize:15,fontWeight:'800'},resultCard:{alignItems:'center',borderRadius:24,backgroundColor:colors.blanco,padding:22},eyebrow:{marginTop:12,color:colors.azulClaro,fontSize:11,fontWeight:'800',letterSpacing:1.2},resultScore:{marginTop:10,color:colors.azulOscuro,fontSize:46,fontWeight:'800'},resultLabel:{color:'#6C8190',fontSize:13},progress:{width:'100%',marginTop:16},pending:{marginTop:14,color:colors.morado,fontSize:14,fontWeight:'800'},historicalDomain:{marginTop:18,width:'100%',borderRadius:16,backgroundColor:'#EAF6FC',padding:14},historicalLabel:{color:colors.azulClaro,fontSize:10,fontWeight:'800',letterSpacing:1},historicalValue:{marginTop:4,color:colors.azulOscuro,fontSize:17,fontWeight:'800'},dominionSeal:{marginTop:16,borderWidth:2,borderColor:colors.azulClaro,borderRadius:16,backgroundColor:'#EAF8FF',paddingHorizontal:16,paddingVertical:10},dominionSealText:{color:colors.azulOscuro,fontSize:11,fontWeight:'900',letterSpacing:1}
 });
