@@ -20,8 +20,8 @@ const studies: PositioningStudy[] = [
 
 export default function UpperLimbScreen() {
   const openStudy = (study: PositioningStudy) => {
-    if (study.slug === 'dedo-pulgar') {
-      router.push('/posicionamientos/miembro-superior/dedo-pulgar');
+    if (study.slug === 'dedo-pulgar' || study.slug === 'mano') {
+      router.push(`/posicionamientos/miembro-superior/${study.slug}`);
       return;
     }
 
@@ -66,3 +66,4 @@ const styles = StyleSheet.create({
   subtitle: { marginTop: 9, color: '#5D7282', fontSize: 15, lineHeight: 22 },
   list: { gap: 14 }
 });
+
