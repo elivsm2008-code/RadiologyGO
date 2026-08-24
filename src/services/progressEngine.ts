@@ -11,7 +11,7 @@ export function createInitialLearningProgress(): LearningProgress {
     achievements: [],
     projections: Object.fromEntries(projectionCatalog.map((item) => [item.id, emptyProjection()])),
     questionBankProgress: Object.fromEntries(projectionCatalog.map((item) => [item.id, emptyBankProgress()])),
-    questionHistory: {}, recentQuestionIds: {}, reviews: Object.fromEntries(projectionCatalog.map((item) => [item.id, emptyReview()])), schemaVersion: 4, thumbVerification: emptyVerification(), xp: 0
+    questionHistory: {}, recentQuestionIds: {}, reviews: Object.fromEntries(projectionCatalog.map((item) => [item.id, emptyReview()])), schemaVersion: 5, thumbVerification: emptyVerification(), handVerification: emptyVerification(), xp: 0
   };
 }
 
@@ -34,7 +34,8 @@ export function normalizeLearningProgress(value?: Partial<LearningProgress> | nu
     questionHistory: value.questionHistory && typeof value.questionHistory === 'object' ? value.questionHistory : {},
     recentQuestionIds: value.recentQuestionIds && typeof value.recentQuestionIds === 'object' ? value.recentQuestionIds : {},
     reviews: Object.fromEntries(projectionCatalog.map((item) => [item.id, { ...emptyReview(), ...(value.reviews?.[item.id] ?? {}) }])),
-    schemaVersion: 4, thumbVerification: verification,
+    schemaVersion: 5, thumbVerification: verification,
+    handVerification: hasQuestionMastery ? { ...emptyVerification(), ...(value.handVerification ?? {}) } : emptyVerification(),
     xp: typeof value.xp === 'number' && value.xp >= 0 ? value.xp : 0
   };
 }
@@ -118,7 +119,7 @@ export function applyQuestionAnswer(current: LearningProgress, scopeId: string, 
 
   const previousHistory = current.questionHistory[questionId];
   const questionHistory = { ...current.questionHistory, [questionId]: { conceptId, correctCount: (previousHistory?.correctCount ?? 0) + (correct ? 1 : 0), incorrectCount: (previousHistory?.incorrectCount ?? 0) + (correct ? 0 : 1), lastAnsweredCorrectly: correct, lastSeenAt: answeredAt, projectionId: scopeId, seenCount: (previousHistory?.seenCount ?? 0) + 1 } };
-  const progress = { ...current, achievements: [...current.achievements, ...achievementsUnlocked], projections, questionBankProgress, questionHistory, schemaVersion: 4, thumbVerification, xp: current.xp + xpGained };
+  const progress = { ...current, achievements: [...current.achievements, ...achievementsUnlocked], projections, questionBankProgress, questionHistory, schemaVersion: 5, thumbVerification, xp: current.xp + xpGained };
   return { achievementsUnlocked, levelAfter: calculateLevelProgress(progress.xp).level, levelBefore, progress, xpGained };
 }
 
@@ -189,3 +190,4 @@ export function applyPracticeResult(current: LearningProgress, result: PracticeR
 }
 
 export { achievementCatalog };
+
