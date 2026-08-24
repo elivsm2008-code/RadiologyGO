@@ -88,6 +88,7 @@ export type LearningProgress = {
   reviews: Record<string, ProjectionReviewProgress>;
   schemaVersion: number;
   thumbVerification: KnowledgeVerificationProgress;
+  handVerification: KnowledgeVerificationProgress;
   xp: number;
 };
 
@@ -117,3 +118,4 @@ export type QuestionAnswerUpdate = {
   progress: LearningProgress;
   xpGained: number;
 };
+
