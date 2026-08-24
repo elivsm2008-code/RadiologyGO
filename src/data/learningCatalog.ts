@@ -18,7 +18,10 @@ export type StudyCatalogItem = {
 export const projectionCatalog: ProjectionCatalogItem[] = [
   { id: 'ap', title: 'AP', studyId: 'dedo-pulgar', achievementId: 'dominio-dedo-pulgar-ap' },
   { id: 'oblicua', title: 'Oblicua', studyId: 'dedo-pulgar', achievementId: 'dominio-dedo-pulgar-oblicua' },
-  { id: 'lateral', title: 'Lateral', studyId: 'dedo-pulgar', achievementId: 'dominio-dedo-pulgar-lateral' }
+  { id: 'lateral', title: 'Lateral', studyId: 'dedo-pulgar', achievementId: 'dominio-dedo-pulgar-lateral' },
+  { id: 'mano-pa', title: 'P.A.', studyId: 'mano', achievementId: 'dominio-mano-pa' },
+  { id: 'mano-oblicua', title: 'Oblicua', studyId: 'mano', achievementId: 'dominio-mano-oblicua' },
+  { id: 'mano-lateral', title: 'Lateral', studyId: 'mano', achievementId: 'dominio-mano-lateral' }
 ];
 
 export const studyCatalog: StudyCatalogItem[] = [
@@ -28,6 +31,13 @@ export const studyCatalog: StudyCatalogItem[] = [
     regionId: 'miembro-superior',
     projectionIds: ['ap', 'oblicua', 'lateral'],
     achievementId: 'maestria-dedo-pulgar'
+  },
+  {
+    id: 'mano',
+    title: 'Mano',
+    regionId: 'miembro-superior',
+    projectionIds: ['mano-pa', 'mano-oblicua', 'mano-lateral'],
+    achievementId: 'maestria-mano'
   }
 ];
 
@@ -71,6 +81,26 @@ export const achievementCatalog: AchievementDefinition[] = [
     description: 'Certificación por completar la Verificación de conocimientos de Dedo pulgar.',
     requirement: 'Domina las 30 preguntas de la Verificación de conocimientos.',
     xpReward: 200
+  },
+  {
+    id: 'dominio-mano-pa', code: 'PA', title: 'Dominio P.A. — Mano',
+    description: 'Dominio de la proyección P.A. de Mano.', requirement: 'Domina las 30 preguntas oficiales de P.A.', xpReward: 50
+  },
+  {
+    id: 'dominio-mano-oblicua', code: 'OB', title: 'Dominio Oblicua — Mano',
+    description: 'Dominio de la proyección Oblicua de Mano.', requirement: 'Domina las 30 preguntas oficiales de Oblicua.', xpReward: 50
+  },
+  {
+    id: 'dominio-mano-lateral', code: 'LT', title: 'Dominio Lateral — Mano',
+    description: 'Dominio de la proyección Lateral de Mano.', requirement: 'Domina las 30 preguntas oficiales de Lateral.', xpReward: 50
+  },
+  {
+    id: 'maestria-mano', code: 'MA', title: 'Maestría: Mano',
+    description: 'Reconocimiento por dominar las tres proyecciones de Mano.', requirement: 'Alcanza 100% en P.A., Oblicua y Lateral.', xpReward: 100
+  },
+  {
+    id: 'mano-verificada', code: 'MV', title: 'Mano Verificada',
+    description: 'Certificación de la Verificación de conocimientos de Mano.', requirement: 'Completa la verificación oficial de Mano.', xpReward: 200
   }
 ];
 
@@ -85,3 +115,4 @@ export function getStudyCatalogItem(id: string) {
 export function getAchievementDefinition(id: string) {
   return achievementCatalog.find((achievement) => achievement.id === id);
 }
+
