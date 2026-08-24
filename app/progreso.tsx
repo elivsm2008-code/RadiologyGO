@@ -17,7 +17,9 @@ export default function ProgressScreen() {
   const summary = getProgressSummary(progress);
   const upperLimbMastery = calculateRegionMastery(progress, 'miembro-superior');
   const thumbMastery = calculateStudyMastery(progress, 'dedo-pulgar');
+  const handMastery = calculateStudyMastery(progress, 'mano');
   const thumbStudy = studyCatalog.find((study) => study.id === 'dedo-pulgar');
+  const handStudy = studyCatalog.find((study) => study.id === 'mano');
   const selectedDefinition = achievementCatalog.find((badge) => badge.id === selectedBadgeId);
   const selectedEarned = progress.achievements.find((achievement) => achievement.id === selectedBadgeId);
 
@@ -97,6 +99,32 @@ export default function ProgressScreen() {
               </View>
             </View>
 
+            <View style={[styles.studyCard, styles.nextStudyCard]}>
+              <ProgressCard compact label="Mano" mastery={handMastery} />
+              <View style={styles.projectionList}>
+                {handStudy?.projectionIds.map((projectionId) => {
+                  const projection = progress.projections[projectionId];
+                  const title = projectionId === 'mano-pa' ? 'P.A.' : projectionId === 'mano-oblicua' ? 'Oblicua' : 'Lateral';
+                  return (
+                    <View key={projectionId} style={styles.projectionRow}>
+                      <View style={styles.projectionCopy}>
+                        <Text style={styles.projectionTitle}>{title}</Text>
+                        <Text style={styles.projectionStatus}>{getMasteryStatus(projection?.mastery ?? 0)}</Text>
+                      </View>
+                      <View style={styles.projectionProgress}><MasteryBar value={projection?.mastery ?? 0} /></View>
+                      <Text style={styles.projectionValue}>{projection?.mastery ?? 0}%</Text>
+                    </View>
+                  );
+                })}
+                <View style={styles.verificationRow}>
+                  <View style={styles.projectionCopy}><Text style={styles.projectionTitle}>Verificación</Text><Text style={styles.projectionStatus}>Bloqueada</Text></View>
+                  <View style={styles.projectionProgress}><MasteryBar value={0} /></View>
+                  <Text style={styles.projectionValue}>0%</Text>
+                </View>
+                <Text style={styles.bankPending}>El progreso se activará con los bancos oficiales de Mano.</Text>
+              </View>
+            </View>
+
             <Text style={styles.sectionTitle}>Mis insignias</Text>
             <View style={styles.badges}>
               {achievementCatalog.map((definition) => (
@@ -170,6 +198,7 @@ const styles = StyleSheet.create({
   upcomingTitle: { color: '#65747D', fontSize: 13, fontWeight: '700' },
   upcomingText: { color: '#87949B', fontSize: 12 },
   studyCard: { borderWidth: 1, borderColor: '#E3EBF1', borderRadius: 22, backgroundColor: colors.blanco, padding: 17 },
+  nextStudyCard: { marginTop: 12 },
   projectionList: { gap: 14, marginTop: 17 },
   projectionRow: { flexDirection: 'row', alignItems: 'center' },
   projectionBlock: { gap: 7 },
@@ -183,6 +212,7 @@ const styles = StyleSheet.create({
   verifiedBanner: { borderWidth: 1, borderColor: '#B8E2F7', borderRadius: 16, backgroundColor: '#EFFAFF', padding: 14 },
   verifiedBannerTitle: { color: colors.azulOscuro, fontSize: 14, fontWeight: '800' },
   verifiedBannerText: { marginTop: 3, color: '#647987', fontSize: 11 },
+  bankPending: { color: '#718492', fontSize: 10, lineHeight: 15 },
   badges: { gap: 11 },
   badgeDetail: { marginTop: 12, borderLeftWidth: 4, borderLeftColor: colors.morado, borderRadius: 16, backgroundColor: colors.blanco, padding: 16 },
   badgeDetailEyebrow: { color: colors.morado, fontSize: 10, fontWeight: '800', letterSpacing: 1 },
@@ -191,3 +221,4 @@ const styles = StyleSheet.create({
   badgeRequirement: { marginTop: 7, color: '#5E7382', fontSize: 12, fontWeight: '600' },
   badgeState: { marginTop: 9, color: colors.azulClaro, fontSize: 12, fontWeight: '800' }
 });
+
