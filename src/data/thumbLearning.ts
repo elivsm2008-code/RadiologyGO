@@ -33,12 +33,14 @@ export type OrderExercise = ExerciseBase & {
 
 export type PracticeExercise = ChoiceExercise | MultiSelectExercise | OrderExercise;
 
-export type ThumbProjection = {
+export type LearningProjection = {
   exercises: PracticeExercise[];
-  id: ProjectionId;
+  id: string;
   learningSections: LearningSection[];
   title: string;
 };
+
+export type ThumbProjection = LearningProjection & { id: ProjectionId };
 
 const patientPosition = 'Colocado en un extremo de la mesa, cómodamente sentado.';
 const tablePosition = 'Colocar la mano y el antebrazo a la altura de la mesa.';
@@ -177,3 +179,4 @@ export const thumbProjections: ThumbProjection[] = [
 export function getThumbProjection(id?: string) {
   return thumbProjections.find((projection) => projection.id === id);
 }
+
