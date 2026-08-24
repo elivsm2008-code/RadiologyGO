@@ -1,10 +1,10 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { colors } from '@/src/constants/colors';
-import type { ThumbProjection } from '@/src/data/thumbLearning';
+import type { LearningProjection } from '@/src/data/thumbLearning';
 
 type ProjectionLearningModeProps = {
-  projection: ThumbProjection;
+  projection: LearningProjection;
 };
 
 export function ProjectionLearningMode({ projection }: ProjectionLearningModeProps) {
@@ -39,3 +39,4 @@ const styles = StyleSheet.create({
   bullet: { width: 5, height: 5, marginTop: 7, marginRight: 8, borderRadius: 3, backgroundColor: colors.azulClaro },
   content: { flex: 1, color: '#5E7382', fontSize: 14, lineHeight: 21 }
 });
+
