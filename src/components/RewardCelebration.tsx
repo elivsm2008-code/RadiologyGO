@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import type { ReactNode } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 
 import { colors } from '@/src/constants/colors';
@@ -11,16 +12,17 @@ type Props = {
   subtitle: string;
   title: string;
   showRayo?: boolean;
+  visual?: ReactNode;
 };
 
-export function RewardCelebration({ code, eyebrow, message, showRayo = true, subtitle, title }: Props) {
+export function RewardCelebration({ code, eyebrow, message, showRayo = true, subtitle, title, visual }: Props) {
   const scale = useRef(new Animated.Value(0.94)).current;
   useEffect(() => { Animated.spring(scale, { friction: 8, tension: 65, toValue: 1, useNativeDriver: true }).start(); }, [scale]);
   return (
     <Animated.View accessibilityRole="summary" style={[styles.card, { transform: [{ scale }] }]}>
       {showRayo && <RayoCompanion message={message} pose="celebrate" />}
       <View style={styles.rewardRow}>
-        {code && <View style={styles.medallion}><Text style={styles.code}>{code}</Text></View>}
+        {visual ?? (code && <View style={styles.medallion}><Text style={styles.code}>{code}</Text></View>)}
         <View style={styles.copy}>
           <Text style={styles.eyebrow}>{eyebrow}</Text>
           <Text style={styles.title}>{title}</Text>
