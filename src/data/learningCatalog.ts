@@ -45,24 +45,24 @@ export const achievementCatalog: AchievementDefinition[] = [
   {
     id: 'dominio-dedo-pulgar-ap',
     code: 'AP',
-    title: 'Dominio AP',
-    description: 'Dominio de la proyección AP de Dedo pulgar.',
+    title: 'Dedo Pulgar — AP Dominada',
+    description: 'Has completado correctamente los 15 desafíos de la proyección AP.',
     requirement: 'Domina los 15 desafíos oficiales de AP.',
     xpReward: 50
   },
   {
     id: 'dominio-dedo-pulgar-oblicua',
     code: 'OB',
-    title: 'Dominio Oblicua',
-    description: 'Dominio de la proyección Oblicua de Dedo pulgar.',
+    title: 'Dedo Pulgar — Oblicua Dominada',
+    description: 'Has completado correctamente los 15 desafíos de la proyección Oblicua.',
     requirement: 'Domina los 15 desafíos oficiales de Oblicua.',
     xpReward: 50
   },
   {
     id: 'dominio-dedo-pulgar-lateral',
     code: 'LT',
-    title: 'Dominio Lateral',
-    description: 'Dominio de la proyección Lateral de Dedo pulgar.',
+    title: 'Dedo Pulgar — Lateral Dominada',
+    description: 'Has completado correctamente los 15 desafíos de la proyección Lateral.',
     requirement: 'Domina los 15 desafíos oficiales de Lateral.',
     xpReward: 50
   },
@@ -77,8 +77,8 @@ export const achievementCatalog: AchievementDefinition[] = [
   {
     id: 'dedo-pulgar-verificado',
     code: 'DV',
-    title: 'Dedo Pulgar Verificado',
-    description: 'Certificación por completar la Verificación de conocimientos de Dedo pulgar.',
+    title: 'Dedo Pulgar — Verificado',
+    description: 'Has demostrado dominio completo de AP, Oblicua y Lateral.',
     requirement: 'Domina las 30 preguntas de la Verificación de conocimientos.',
     xpReward: 200
   },
