@@ -1,4 +1,5 @@
 import { achievementCatalog, getAchievementDefinition, getProjectionCatalogItem, getStudyCatalogItem, projectionCatalog, studyCatalog } from '@/src/data/learningCatalog';
+import { thumbQuestionBanks, thumbQuestionIds } from '@/src/data/thumbQuestionBanks';
 import type { Achievement, LearningProgress, LevelProgress, MasteryStatus, PracticeResult, PracticeUpdate, ProjectionProgress, ProjectionReviewProgress, QuestionAnswerUpdate, QuestionBankProgress } from '@/src/types/learning';
 
 const emptyProjection = (): ProjectionProgress => ({ bestScore: 0, lastPractice: null, lastReviewCorrect: null, lastReviewScore: null, lastReviewTotal: null, mastery: 0, practiceCount: 0 });
@@ -11,7 +12,7 @@ export function createInitialLearningProgress(): LearningProgress {
     achievements: [],
     projections: Object.fromEntries(projectionCatalog.map((item) => [item.id, emptyProjection()])),
     questionBankProgress: Object.fromEntries(projectionCatalog.map((item) => [item.id, emptyBankProgress()])),
-    questionHistory: {}, recentQuestionIds: {}, reviews: Object.fromEntries(projectionCatalog.map((item) => [item.id, emptyReview()])), schemaVersion: 5, thumbVerification: emptyVerification(), handVerification: emptyVerification(), xp: 0
+    questionHistory: {}, recentQuestionIds: {}, reviews: Object.fromEntries(projectionCatalog.map((item) => [item.id, emptyReview()])), schemaVersion: 6, thumbVerification: emptyVerification(), handVerification: emptyVerification(), xp: 0
   };
 }
 
@@ -21,20 +22,40 @@ export function normalizeLearningProgress(value?: Partial<LearningProgress> | nu
   const hasQuestionMastery = (value.schemaVersion ?? 0) >= 3;
   const banks = Object.fromEntries(projectionCatalog.map((item) => {
     const stored = hasQuestionMastery ? value.questionBankProgress?.[item.id] : undefined;
-    return [item.id, { ...emptyBankProgress(), ...(stored ?? {}) }];
+    const validIds = item.id in thumbQuestionIds ? thumbQuestionIds[item.id as keyof typeof thumbQuestionIds] : null;
+    const masteredQuestionIds = validIds ? (stored?.masteredQuestionIds ?? []).filter((id) => validIds.has(id)) : (stored?.masteredQuestionIds ?? []);
+    const reinforcementQuestionIds = validIds ? (stored?.reinforcementQuestionIds ?? []).filter((id) => validIds.has(id)) : (stored?.reinforcementQuestionIds ?? []);
+    const classifiedCount = new Set([...masteredQuestionIds, ...reinforcementQuestionIds]).size;
+    return [item.id, {
+      ...emptyBankProgress(),
+      ...(stored ?? {}),
+      masteredQuestionIds,
+      reinforcementQuestionIds,
+      hasCompletedInitialRound: validIds ? classifiedCount >= validIds.size : Boolean(stored?.hasCompletedInitialRound)
+    }];
   }));
   const projections = Object.fromEntries(projectionCatalog.map((item) => {
     const stored = value.projections?.[item.id];
-    const mastery = Math.round(((banks[item.id]?.masteredQuestionIds.length ?? 0) / 30) * 100);
+    const total = item.id in thumbQuestionBanks ? thumbQuestionBanks[item.id as keyof typeof thumbQuestionBanks].length : 30;
+    const mastery = Math.round(((banks[item.id]?.masteredQuestionIds.length ?? 0) / total) * 100);
     return [item.id, { ...emptyProjection(), ...(stored ?? {}), mastery }];
   }));
-  const verification = hasQuestionMastery ? { ...emptyVerification(), ...(value.thumbVerification ?? {}) } : emptyVerification();
+  const allThumbIds = new Set(Object.values(thumbQuestionBanks).flatMap((bank) => bank.map((question) => question.id)));
+  const storedVerification = hasQuestionMastery ? value.thumbVerification : undefined;
+  const selectedQuestionIds = (storedVerification?.selectedQuestionIds ?? []).filter((id) => allThumbIds.has(id));
+  const verification = selectedQuestionIds.length === 30 ? {
+    ...emptyVerification(),
+    ...(storedVerification ?? {}),
+    selectedQuestionIds,
+    masteredQuestionIds: (storedVerification?.masteredQuestionIds ?? []).filter((id) => selectedQuestionIds.includes(id)),
+    reinforcementQuestionIds: (storedVerification?.reinforcementQuestionIds ?? []).filter((id) => selectedQuestionIds.includes(id))
+  } : emptyVerification();
   return {
     achievements: Array.isArray(value.achievements) ? value.achievements : [], projections, questionBankProgress: banks,
     questionHistory: value.questionHistory && typeof value.questionHistory === 'object' ? value.questionHistory : {},
     recentQuestionIds: value.recentQuestionIds && typeof value.recentQuestionIds === 'object' ? value.recentQuestionIds : {},
     reviews: Object.fromEntries(projectionCatalog.map((item) => [item.id, { ...emptyReview(), ...(value.reviews?.[item.id] ?? {}) }])),
-    schemaVersion: 5, thumbVerification: verification,
+    schemaVersion: 6, thumbVerification: verification,
     handVerification: hasQuestionMastery ? { ...emptyVerification(), ...(value.handVerification ?? {}) } : emptyVerification(),
     xp: typeof value.xp === 'number' && value.xp >= 0 ? value.xp : 0
   };
@@ -119,7 +140,7 @@ export function applyQuestionAnswer(current: LearningProgress, scopeId: string, 
 
   const previousHistory = current.questionHistory[questionId];
   const questionHistory = { ...current.questionHistory, [questionId]: { conceptId, correctCount: (previousHistory?.correctCount ?? 0) + (correct ? 1 : 0), incorrectCount: (previousHistory?.incorrectCount ?? 0) + (correct ? 0 : 1), lastAnsweredCorrectly: correct, lastSeenAt: answeredAt, projectionId: scopeId, seenCount: (previousHistory?.seenCount ?? 0) + 1 } };
-  const progress = { ...current, achievements: [...current.achievements, ...achievementsUnlocked], projections, questionBankProgress, questionHistory, schemaVersion: 5, thumbVerification, xp: current.xp + xpGained };
+  const progress = { ...current, achievements: [...current.achievements, ...achievementsUnlocked], projections, questionBankProgress, questionHistory, schemaVersion: 6, thumbVerification, xp: current.xp + xpGained };
   return { achievementsUnlocked, levelAfter: calculateLevelProgress(progress.xp).level, levelBefore, progress, xpGained };
 }
 

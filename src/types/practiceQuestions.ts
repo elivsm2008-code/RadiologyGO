@@ -2,6 +2,7 @@ export type QuestionBase = {
   conceptId: string;
   correctExplanation: string;
   id: string;
+  isFinalChallenge?: boolean;
   prompt: string;
   title: string;
 };
@@ -31,3 +32,4 @@ export type TextQuestion = QuestionBase & {
 };
 
 export type PracticeQuestion = ChoiceQuestion | MultiSelectQuestion | OrderQuestion | TextQuestion;
+

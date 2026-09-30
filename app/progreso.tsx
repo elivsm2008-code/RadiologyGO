@@ -8,6 +8,7 @@ import { RayoCompanion } from '@/src/components/RayoCompanion';
 import { colors } from '@/src/constants/colors';
 import { useLearningProgress } from '@/src/context/LearningProgressContext';
 import { achievementCatalog, studyCatalog } from '@/src/data/learningCatalog';
+import { thumbQuestionBanks } from '@/src/data/thumbQuestionBanks';
 import { calculateLevelProgress, calculateRegionMastery, calculateStudyMastery, getMasteryStatus, getProgressSummary } from '@/src/services/progressEngine';
 
 export default function ProgressScreen() {
@@ -72,13 +73,15 @@ export default function ProgressScreen() {
               <View style={styles.projectionList}>
                 {thumbStudy?.projectionIds.map((projectionId) => {
                   const projection = progress.projections[projectionId];
+                  const bankProgress = progress.questionBankProgress[projectionId];
+                  const totalChallenges = thumbQuestionBanks[projectionId as keyof typeof thumbQuestionBanks].length;
                   const title = projectionId === 'ap' ? 'AP' : projectionId === 'oblicua' ? 'Oblicua' : 'Lateral';
                   return (
                     <View key={projectionId} style={styles.projectionBlock}>
                       <View style={styles.projectionRow}>
                         <View style={styles.projectionCopy}>
                           <Text style={styles.projectionTitle}>{title}</Text>
-                          <Text style={styles.projectionStatus}>{getMasteryStatus(projection?.mastery ?? 0)}</Text>
+                          <Text style={styles.projectionStatus}>{bankProgress?.masteredQuestionIds.length ?? 0}/{totalChallenges} · {getMasteryStatus(projection?.mastery ?? 0)}</Text>
                         </View>
                         <View style={styles.projectionProgress}><MasteryBar value={projection?.mastery ?? 0} /></View>
                         <Text style={styles.projectionValue}>{projection?.mastery ?? 0}%</Text>
@@ -90,7 +93,7 @@ export default function ProgressScreen() {
                 <View style={styles.verificationRow}>
                   <View style={styles.projectionCopy}>
                     <Text style={styles.projectionTitle}>Verificación</Text>
-                    <Text style={styles.projectionStatus}>{progress.thumbVerification.status}</Text>
+                    <Text style={styles.projectionStatus}>{progress.thumbVerification.masteredQuestionIds.length}/30 · {progress.thumbVerification.status}</Text>
                   </View>
                   <View style={styles.projectionProgress}><MasteryBar value={(progress.thumbVerification.masteredQuestionIds.length / 30) * 100} /></View>
                   <Text style={styles.projectionValue}>{Math.round((progress.thumbVerification.masteredQuestionIds.length / 30) * 100)}%</Text>

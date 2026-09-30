@@ -47,7 +47,7 @@ export const achievementCatalog: AchievementDefinition[] = [
     code: 'AP',
     title: 'Dominio AP',
     description: 'Dominio de la proyección AP de Dedo pulgar.',
-    requirement: 'Alcanza 100% de dominio en AP.',
+    requirement: 'Domina los 15 desafíos oficiales de AP.',
     xpReward: 50
   },
   {
@@ -55,7 +55,7 @@ export const achievementCatalog: AchievementDefinition[] = [
     code: 'OB',
     title: 'Dominio Oblicua',
     description: 'Dominio de la proyección Oblicua de Dedo pulgar.',
-    requirement: 'Alcanza 100% de dominio en Oblicua.',
+    requirement: 'Domina los 15 desafíos oficiales de Oblicua.',
     xpReward: 50
   },
   {
@@ -63,7 +63,7 @@ export const achievementCatalog: AchievementDefinition[] = [
     code: 'LT',
     title: 'Dominio Lateral',
     description: 'Dominio de la proyección Lateral de Dedo pulgar.',
-    requirement: 'Alcanza 100% de dominio en Lateral.',
+    requirement: 'Domina los 15 desafíos oficiales de Lateral.',
     xpReward: 50
   },
   {
