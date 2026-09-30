@@ -5,6 +5,7 @@ import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AchievementBadge } from '@/src/components/AchievementBadge';
 import { MasteryBar } from '@/src/components/MasteryBar';
 import { RayoCompanion } from '@/src/components/RayoCompanion';
+import { ThumbRadiographBadge, thumbRadiographBadgeIds } from '@/src/components/ThumbRadiographBadge';
 import { colors } from '@/src/constants/colors';
 import { useLearningProgress } from '@/src/context/LearningProgressContext';
 import { achievementCatalog, studyCatalog } from '@/src/data/learningCatalog';
@@ -23,6 +24,8 @@ export default function ProgressScreen() {
   const handStudy = studyCatalog.find((study) => study.id === 'mano');
   const selectedDefinition = achievementCatalog.find((badge) => badge.id === selectedBadgeId);
   const selectedEarned = progress.achievements.find((achievement) => achievement.id === selectedBadgeId);
+  const thumbBadgeDefinitions = thumbRadiographBadgeIds.map((id) => achievementCatalog.find((badge) => badge.id === id)).filter((badge): badge is NonNullable<typeof badge> => Boolean(badge));
+  const otherBadgeDefinitions = achievementCatalog.filter((badge) => !badge.id.includes('dedo-pulgar'));
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -129,9 +132,10 @@ export default function ProgressScreen() {
             </View>
 
             <Text style={styles.sectionTitle}>Mis insignias</Text>
-            <View style={styles.badges}>
-              {achievementCatalog.map((definition) => (
-                <AchievementBadge
+            <Text style={styles.collectionSubtitle}>Colección radiográfica · Dedo pulgar</Text>
+            <View style={styles.thumbBadgeGrid}>
+              {thumbBadgeDefinitions.map((definition) => (
+                <ThumbRadiographBadge
                   definition={definition}
                   earned={progress.achievements.find((achievement) => achievement.id === definition.id)}
                   key={definition.id}
@@ -139,6 +143,20 @@ export default function ProgressScreen() {
                 />
               ))}
             </View>
+
+            {otherBadgeDefinitions.length > 0 && <>
+              <Text style={styles.otherBadgesTitle}>Otros estudios</Text>
+              <View style={styles.badges}>
+              {otherBadgeDefinitions.map((definition) => (
+                <AchievementBadge
+                  definition={definition}
+                  earned={progress.achievements.find((achievement) => achievement.id === definition.id)}
+                  key={definition.id}
+                  onPress={() => setSelectedBadgeId(selectedBadgeId === definition.id ? null : definition.id)}
+                />
+              ))}
+              </View>
+            </>}
 
             {selectedDefinition && (
               <View style={styles.badgeDetail}>
@@ -217,6 +235,9 @@ const styles = StyleSheet.create({
   verifiedBannerText: { marginTop: 3, color: '#647987', fontSize: 11 },
   bankPending: { color: '#718492', fontSize: 10, lineHeight: 15 },
   badges: { gap: 11 },
+  collectionSubtitle: { marginTop: -4, marginBottom: 13, color: '#718492', fontSize: 12 },
+  thumbBadgeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  otherBadgesTitle: { marginTop: 22, marginBottom: 11, color: colors.azulOscuro, fontSize: 14, fontWeight: '800' },
   badgeDetail: { marginTop: 12, borderLeftWidth: 4, borderLeftColor: colors.morado, borderRadius: 16, backgroundColor: colors.blanco, padding: 16 },
   badgeDetailEyebrow: { color: colors.morado, fontSize: 10, fontWeight: '800', letterSpacing: 1 },
   badgeDetailTitle: { marginTop: 5, color: colors.azulOscuro, fontSize: 17, fontWeight: '800' },
