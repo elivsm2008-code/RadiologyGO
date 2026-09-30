@@ -24,6 +24,7 @@ export default function ProgressScreen() {
   const handStudy = studyCatalog.find((study) => study.id === 'mano');
   const selectedDefinition = achievementCatalog.find((badge) => badge.id === selectedBadgeId);
   const selectedEarned = progress.achievements.find((achievement) => achievement.id === selectedBadgeId);
+  const visibleBadgeCount = progress.achievements.filter((achievement) => achievement.id !== 'maestria-dedo-pulgar').length;
   const thumbBadgeDefinitions = thumbRadiographBadgeIds.map((id) => achievementCatalog.find((badge) => badge.id === id)).filter((badge): badge is NonNullable<typeof badge> => Boolean(badge));
   const otherBadgeDefinitions = achievementCatalog.filter((badge) => !badge.id.includes('dedo-pulgar'));
 
@@ -59,7 +60,7 @@ export default function ProgressScreen() {
             <View style={styles.summaryGrid}>
               <SummaryMetric label="XP total" value={`${progress.xp}`} />
               <SummaryMetric label="Proyecciones dominadas" value={`${summary.masteredProjections}`} />
-              <SummaryMetric label="Insignias" value={`${summary.badgesEarned}`} />
+              <SummaryMetric label="Insignias" value={`${visibleBadgeCount}`} />
               <SummaryMetric label="Prácticas" value={`${summary.totalPractices}`} />
             </View>
 
