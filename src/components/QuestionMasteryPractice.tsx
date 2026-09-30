@@ -145,18 +145,19 @@ export function QuestionMasteryPractice({ bank, isVerification = false, scopeId,
       </View>;
     }
     const complete = result.mastered === bank.length;
+    const unlockedVerification = result.achievements.some((achievement) => achievement.id === 'maestria-dedo-pulgar');
     const message = complete ? (isVerification ? '¡Verificación completada!' : '¡Excelente! Has dominado esta proyección.') : result.pending <= 3 ? `¡Ya casi! Solo nos faltan ${result.pending}.` : '¡Buen trabajo! Nos quedan algunas por reforzar.';
     return <View style={styles.resultCard}>
-      <RayoCompanion message={message} pose={complete ? 'celebrate' : 'wave'} />
+      {(!complete || (isVerification && result.achievements.length === 0)) && <RayoCompanion message={message} pose={complete ? 'celebrate' : 'wave'} />}
       <Text style={styles.eyebrow}>{complete ? (isVerification ? 'VERIFICACIÓN COMPLETADA' : 'PROYECCIÓN DOMINADA') : 'RONDA COMPLETADA'}</Text>
       <Text style={styles.resultScore}>{Math.round((result.mastered / bank.length) * 100)}%</Text>
       <Text style={styles.resultLabel}>{result.mastered} de {bank.length} desafíos dominados</Text>
       <View style={styles.progress}><MasteryBar value={(result.mastered / bank.length) * 100} /></View>
       {!complete && <Text style={styles.pending}>{result.pending} desafíos por reforzar</Text>}
-      {complete && !isVerification && <RewardCelebration code={title.slice(0, 2).toLocaleUpperCase('es')} eyebrow="PROYECCIÓN DOMINADA" message="¡Proyección dominada!" subtitle={`Has completado correctamente los ${bank.length} desafíos de ${title}.`} title={`Dominio ${title}`} />}
-      {result.achievements.some((achievement) => achievement.id === 'maestria-dedo-pulgar') && <RewardCelebration code="VC" eyebrow="NUEVA ETAPA" message="¡Verificación de conocimientos desbloqueada!" subtitle="AP, Oblicua y Lateral están dominadas." title="Verificación disponible" />}
-      {result.levelAfter > result.levelBefore && <RewardCelebration eyebrow="NUEVO NIVEL" message="¡Subiste de nivel!" subtitle="Rayo celebra contigo este nuevo avance." title={`Nivel ${result.levelAfter}`} />}
-      {result.achievements.map((achievement) => { const definition = getAchievementDefinition(achievement.id); return definition ? <AchievementCelebration definition={definition} key={achievement.id} xpGained={definition.xpReward} /> : null; })}
+      {complete && !isVerification && <RewardCelebration code={title.slice(0, 2).toLocaleUpperCase('es')} eyebrow="PROYECCIÓN DOMINADA" message="¡Proyección dominada!" showRayo={!unlockedVerification} subtitle={`Has completado correctamente los ${bank.length} desafíos de ${title}.`} title={`Dominio ${title}`} />}
+      {unlockedVerification && <RewardCelebration code="VC" eyebrow="NUEVA ETAPA" message="¡Verificación de conocimientos desbloqueada!" subtitle="AP, Oblicua y Lateral están dominadas." title="Verificación disponible" />}
+      {result.levelAfter > result.levelBefore && <RewardCelebration eyebrow="NUEVO NIVEL" message="¡Subiste de nivel!" showRayo={false} subtitle="Rayo celebra contigo este nuevo avance." title={`Nivel ${result.levelAfter}`} />}
+      {result.achievements.map((achievement, achievementIndex) => { const definition = getAchievementDefinition(achievement.id); return definition ? <AchievementCelebration definition={definition} key={achievement.id} showRayo={isVerification && achievementIndex === 0} xpGained={definition.xpReward} /> : null; })}
       {!complete && <Pressable onPress={() => begin(progress)} style={styles.primary}><Text style={styles.primaryText}>Reforzar mis errores</Text></Pressable>}
     </View>;
   }

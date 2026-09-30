@@ -10,14 +10,15 @@ type Props = {
   message: string;
   subtitle: string;
   title: string;
+  showRayo?: boolean;
 };
 
-export function RewardCelebration({ code, eyebrow, message, subtitle, title }: Props) {
+export function RewardCelebration({ code, eyebrow, message, showRayo = true, subtitle, title }: Props) {
   const scale = useRef(new Animated.Value(0.94)).current;
   useEffect(() => { Animated.spring(scale, { friction: 8, tension: 65, toValue: 1, useNativeDriver: true }).start(); }, [scale]);
   return (
     <Animated.View accessibilityRole="summary" style={[styles.card, { transform: [{ scale }] }]}>
-      <RayoCompanion message={message} pose="celebrate" />
+      {showRayo && <RayoCompanion message={message} pose="celebrate" />}
       <View style={styles.rewardRow}>
         {code && <View style={styles.medallion}><Text style={styles.code}>{code}</Text></View>}
         <View style={styles.copy}>
@@ -31,7 +32,7 @@ export function RewardCelebration({ code, eyebrow, message, subtitle, title }: P
 }
 
 const styles = StyleSheet.create({
-  card: { width: '100%', marginTop: 16, borderWidth: 1, borderColor: '#CDE6F4', borderRadius: 22, backgroundColor: '#F4FBFF', padding: 15, overflow: 'hidden' },
+  card: { zIndex: 1, width: '100%', marginTop: 16, borderWidth: 1, borderColor: '#CDE6F4', borderRadius: 22, backgroundColor: '#F4FBFF', padding: 15, overflow: 'visible' },
   rewardRow: { flexDirection: 'row', alignItems: 'center' },
   medallion: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: colors.azulClaro, borderRadius: 26, backgroundColor: colors.azulOscuro },
   code: { color: colors.blanco, fontSize: 11, fontWeight: '800' },
@@ -40,3 +41,4 @@ const styles = StyleSheet.create({
   title: { marginTop: 3, color: colors.azulOscuro, fontSize: 16, fontWeight: '800' },
   subtitle: { marginTop: 4, color: '#607786', fontSize: 11, lineHeight: 16 }
 });
+
