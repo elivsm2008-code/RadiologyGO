@@ -11,6 +11,7 @@ import { MasteryBar } from './MasteryBar';
 import { PracticeFeedback } from './PracticeFeedback';
 import { RayoCompanion } from './RayoCompanion';
 import { RewardCelebration } from './RewardCelebration';
+import { isThumbRadiographAchievement } from './ThumbRadiographBadge';
 
 type Props = { bank: PracticeQuestion[]; isVerification?: boolean; scopeId: string; title: string };
 type Result = { achievements: Achievement[]; correct: number; isReview: boolean; levelAfter: number; levelBefore: number; mastered: number; pending: number; score: number; total: number; xp: number };
@@ -146,6 +147,7 @@ export function QuestionMasteryPractice({ bank, isVerification = false, scopeId,
     }
     const complete = result.mastered === bank.length;
     const unlockedVerification = result.achievements.some((achievement) => achievement.id === 'maestria-dedo-pulgar');
+    const hasNewProjectionBadge = result.achievements.some((achievement) => ['dominio-dedo-pulgar-ap', 'dominio-dedo-pulgar-oblicua', 'dominio-dedo-pulgar-lateral'].includes(achievement.id));
     const message = complete ? (isVerification ? '¡Verificación completada!' : '¡Excelente! Has dominado esta proyección.') : result.pending <= 3 ? `¡Ya casi! Solo nos faltan ${result.pending}.` : '¡Buen trabajo! Nos quedan algunas por reforzar.';
     return <View style={styles.resultCard}>
       {(!complete || (isVerification && result.achievements.length === 0)) && <RayoCompanion message={message} pose={complete ? 'celebrate' : 'wave'} />}
@@ -154,10 +156,10 @@ export function QuestionMasteryPractice({ bank, isVerification = false, scopeId,
       <Text style={styles.resultLabel}>{result.mastered} de {bank.length} desafíos dominados</Text>
       <View style={styles.progress}><MasteryBar value={(result.mastered / bank.length) * 100} /></View>
       {!complete && <Text style={styles.pending}>{result.pending} desafíos por reforzar</Text>}
-      {complete && !isVerification && <RewardCelebration code={title.slice(0, 2).toLocaleUpperCase('es')} eyebrow="PROYECCIÓN DOMINADA" message="¡Proyección dominada!" showRayo={!unlockedVerification} subtitle={`Has completado correctamente los ${bank.length} desafíos de ${title}.`} title={`Dominio ${title}`} />}
+      {complete && !isVerification && !hasNewProjectionBadge && <RewardCelebration code={title.slice(0, 2).toLocaleUpperCase('es')} eyebrow="PROYECCIÓN DOMINADA" message="¡Proyección dominada!" showRayo={!unlockedVerification} subtitle={`Has completado correctamente los ${bank.length} desafíos de ${title}.`} title={`Dominio ${title}`} />}
       {unlockedVerification && <RewardCelebration code="VC" eyebrow="NUEVA ETAPA" message="¡Verificación de conocimientos desbloqueada!" subtitle="AP, Oblicua y Lateral están dominadas." title="Verificación disponible" />}
-      {result.levelAfter > result.levelBefore && <RewardCelebration eyebrow="NUEVO NIVEL" message="¡Subiste de nivel!" showRayo={false} subtitle="Rayo celebra contigo este nuevo avance." title={`Nivel ${result.levelAfter}`} />}
-      {result.achievements.map((achievement, achievementIndex) => { const definition = getAchievementDefinition(achievement.id); return definition ? <AchievementCelebration definition={definition} key={achievement.id} showRayo={isVerification && achievementIndex === 0} xpGained={definition.xpReward} /> : null; })}
+      {result.levelAfter > result.levelBefore && <RewardCelebration eyebrow="NUEVO NIVEL" message="¡Subiste de nivel!" subtitle="Rayo celebra contigo este nuevo avance." title={`Nivel ${result.levelAfter}`} />}
+      {result.achievements.filter((achievement) => achievement.id !== 'maestria-dedo-pulgar').map((achievement) => { const definition = getAchievementDefinition(achievement.id); return definition ? <AchievementCelebration definition={definition} key={achievement.id} showRayo={isThumbRadiographAchievement(achievement.id)} xpGained={definition.xpReward} /> : null; })}
       {!complete && <Pressable onPress={() => begin(progress)} style={styles.primary}><Text style={styles.primaryText}>Reforzar mis errores</Text></Pressable>}
     </View>;
   }
