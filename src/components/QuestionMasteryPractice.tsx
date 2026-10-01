@@ -11,7 +11,6 @@ import { MasteryBar } from './MasteryBar';
 import { PracticeFeedback } from './PracticeFeedback';
 import { RayoCompanion } from './RayoCompanion';
 import { RewardCelebration } from './RewardCelebration';
-import { isThumbRadiographAchievement } from './ThumbRadiographBadge';
 
 type Props = { bank: PracticeQuestion[]; isVerification?: boolean; scopeId: string; title: string };
 type Result = { achievements: Achievement[]; correct: number; isReview: boolean; levelAfter: number; levelBefore: number; mastered: number; pending: number; score: number; total: number; xp: number };
@@ -159,7 +158,7 @@ export function QuestionMasteryPractice({ bank, isVerification = false, scopeId,
       {complete && !isVerification && !hasNewProjectionBadge && <RewardCelebration code={title.slice(0, 2).toLocaleUpperCase('es')} eyebrow="PROYECCIÓN DOMINADA" message="¡Proyección dominada!" showRayo={!unlockedVerification} subtitle={`Has completado correctamente los ${bank.length} desafíos de ${title}.`} title={`Dominio ${title}`} />}
       {unlockedVerification && <RewardCelebration code="VC" eyebrow="NUEVA ETAPA" message="¡Verificación de conocimientos desbloqueada!" subtitle="AP, Oblicua y Lateral están dominadas." title="Verificación disponible" />}
       {result.levelAfter > result.levelBefore && <RewardCelebration eyebrow="NUEVO NIVEL" message="¡Subiste de nivel!" subtitle="Rayo celebra contigo este nuevo avance." title={`Nivel ${result.levelAfter}`} />}
-      {result.achievements.filter((achievement) => achievement.id !== 'maestria-dedo-pulgar').map((achievement) => { const definition = getAchievementDefinition(achievement.id); return definition ? <AchievementCelebration definition={definition} key={achievement.id} showRayo={isThumbRadiographAchievement(achievement.id)} xpGained={definition.xpReward} /> : null; })}
+      {result.achievements.filter((achievement) => achievement.id !== 'maestria-dedo-pulgar').map((achievement) => { const definition = getAchievementDefinition(achievement.id); return definition ? <AchievementCelebration definition={definition} key={achievement.id} showRayo xpGained={definition.xpReward} /> : null; })}
       {!complete && <Pressable onPress={() => begin(progress)} style={styles.primary}><Text style={styles.primaryText}>Reforzar mis errores</Text></Pressable>}
     </View>;
   }
