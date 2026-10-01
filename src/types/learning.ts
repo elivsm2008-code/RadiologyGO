@@ -57,6 +57,7 @@ export type QuestionBankProgress = {
 };
 
 export type VerificationStatus = 'Bloqueada' | 'Disponible' | 'En progreso' | 'Verificada';
+export type VerificationKind = 'thumb' | 'hand';
 
 export type KnowledgeVerificationProgress = QuestionBankProgress & {
   completedAt: string | null;

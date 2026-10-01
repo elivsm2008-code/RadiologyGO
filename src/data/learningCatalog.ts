@@ -84,15 +84,15 @@ export const achievementCatalog: AchievementDefinition[] = [
   },
   {
     id: 'dominio-mano-pa', code: 'PA', title: 'Dominio P.A. — Mano',
-    description: 'Dominio de la proyección P.A. de Mano.', requirement: 'Domina las 30 preguntas oficiales de P.A.', xpReward: 50
+    description: 'Has completado correctamente los 15 desafíos de la proyección P.A. de Mano.', requirement: 'Domina los 15 desafíos oficiales de P.A.', xpReward: 50
   },
   {
     id: 'dominio-mano-oblicua', code: 'OB', title: 'Dominio Oblicua — Mano',
-    description: 'Dominio de la proyección Oblicua de Mano.', requirement: 'Domina las 30 preguntas oficiales de Oblicua.', xpReward: 50
+    description: 'Has completado correctamente los 15 desafíos de la proyección Oblicua de Mano.', requirement: 'Domina los 15 desafíos oficiales de Oblicua.', xpReward: 50
   },
   {
     id: 'dominio-mano-lateral', code: 'LT', title: 'Dominio Lateral — Mano',
-    description: 'Dominio de la proyección Lateral de Mano.', requirement: 'Domina las 30 preguntas oficiales de Lateral.', xpReward: 50
+    description: 'Has completado correctamente los 15 desafíos de la proyección Lateral de Mano.', requirement: 'Domina los 15 desafíos oficiales de Lateral.', xpReward: 50
   },
   {
     id: 'maestria-mano', code: 'MA', title: 'Maestría: Mano',
@@ -100,7 +100,7 @@ export const achievementCatalog: AchievementDefinition[] = [
   },
   {
     id: 'mano-verificada', code: 'MV', title: 'Mano Verificada',
-    description: 'Certificación de la Verificación de conocimientos de Mano.', requirement: 'Completa la verificación oficial de Mano.', xpReward: 200
+    description: 'Has demostrado dominio completo de P.A., Oblicua y Lateral de Mano.', requirement: 'Domina los 30 desafíos de la Verificación de conocimientos.', xpReward: 200
   }
 ];
 

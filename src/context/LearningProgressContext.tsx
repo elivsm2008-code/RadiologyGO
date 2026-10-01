@@ -1,18 +1,18 @@
 import { createContext, type PropsWithChildren, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
-import { applyPracticeResult, applyQuestionAnswer, applyReviewAnswer, completeProjectionReview, completeQuestionRound, createInitialLearningProgress, initializeThumbVerification, recordPracticeSessionStarted, startProjectionReview } from '@/src/services/progressEngine';
+import { applyPracticeResult, applyQuestionAnswer, applyReviewAnswer, completeProjectionReview, completeQuestionRound, createInitialLearningProgress, initializeVerification, recordPracticeSessionStarted, startProjectionReview } from '@/src/services/progressEngine';
 import { loadLearningProgress, saveLearningProgress } from '@/src/services/progressStorage';
-import type { LearningProgress, PracticeResult, PracticeUpdate, QuestionAnswerUpdate } from '@/src/types/learning';
+import type { LearningProgress, PracticeResult, PracticeUpdate, QuestionAnswerUpdate, VerificationKind } from '@/src/types/learning';
 
 type LearningProgressContextValue = {
   isHydrated: boolean;
   progress: LearningProgress;
   registerPractice: (result: PracticeResult) => PracticeUpdate;
-  answerQuestion: (scopeId: string, questionId: string, conceptId: string, correct: boolean, total: number, isVerification?: boolean) => QuestionAnswerUpdate;
+  answerQuestion: (scopeId: string, questionId: string, conceptId: string, correct: boolean, total: number, verificationKind?: VerificationKind) => QuestionAnswerUpdate;
   answerReviewQuestion: (projectionId: string, questionId: string, correct: boolean) => LearningProgress;
   completeReview: (projectionId: string, correct: number, total: number) => LearningProgress;
-  completeRound: (scopeId: string, score: number, isVerification?: boolean) => LearningProgress;
-  initializeVerification: (questionIds: string[]) => LearningProgress;
+  completeRound: (scopeId: string, score: number, verificationKind?: VerificationKind) => LearningProgress;
+  initializeVerification: (kind: VerificationKind, questionIds: string[]) => LearningProgress;
   startPracticeSession: (projectionId: string, questionIds: string[]) => void;
   startReview: (projectionId: string, questionIds: string[]) => LearningProgress;
 };
@@ -49,8 +49,8 @@ export function LearningProgressProvider({ children }: PropsWithChildren) {
       setProgress(update.progress);
       return update;
     },
-    answerQuestion: (scopeId, questionId, conceptId, correct, total, isVerification = false) => {
-      const update = applyQuestionAnswer(progressRef.current, scopeId, questionId, conceptId, correct, total, isVerification);
+    answerQuestion: (scopeId, questionId, conceptId, correct, total, verificationKind) => {
+      const update = applyQuestionAnswer(progressRef.current, scopeId, questionId, conceptId, correct, total, verificationKind);
       progressRef.current = update.progress;
       setProgress(update.progress);
       return update;
@@ -67,14 +67,14 @@ export function LearningProgressProvider({ children }: PropsWithChildren) {
       setProgress(updated);
       return updated;
     },
-    completeRound: (scopeId, score, isVerification = false) => {
-      const updated = completeQuestionRound(progressRef.current, scopeId, score, isVerification);
+    completeRound: (scopeId, score, verificationKind) => {
+      const updated = completeQuestionRound(progressRef.current, scopeId, score, verificationKind);
       progressRef.current = updated;
       setProgress(updated);
       return updated;
     },
-    initializeVerification: (questionIds) => {
-      const updated = initializeThumbVerification(progressRef.current, questionIds);
+    initializeVerification: (kind, questionIds) => {
+      const updated = initializeVerification(progressRef.current, kind, questionIds);
       progressRef.current = updated;
       setProgress(updated);
       return updated;
@@ -100,3 +100,4 @@ export function useLearningProgress() {
   if (!context) throw new Error('useLearningProgress debe utilizarse dentro de LearningProgressProvider');
   return context;
 }
+

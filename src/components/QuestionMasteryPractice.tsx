@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { colors } from '@/src/constants/colors';
 import { useLearningProgress } from '@/src/context/LearningProgressContext';
 import { getAchievementDefinition } from '@/src/data/learningCatalog';
-import type { Achievement, LearningProgress } from '@/src/types/learning';
+import type { Achievement, LearningProgress, VerificationKind } from '@/src/types/learning';
 import type { PracticeQuestion } from '@/src/types/practiceQuestions';
 import { AchievementCelebration } from './AchievementCelebration';
 import { MasteryBar } from './MasteryBar';
@@ -12,7 +12,7 @@ import { PracticeFeedback } from './PracticeFeedback';
 import { RayoCompanion } from './RayoCompanion';
 import { RewardCelebration } from './RewardCelebration';
 
-type Props = { bank: PracticeQuestion[]; isVerification?: boolean; scopeId: string; title: string };
+type Props = { bank: PracticeQuestion[]; verificationKind?: VerificationKind; scopeId: string; title: string };
 type Result = { achievements: Achievement[]; correct: number; isReview: boolean; levelAfter: number; levelBefore: number; mastered: number; pending: number; score: number; total: number; xp: number };
 const startMessages = ['¡Vamos! Tú puedes con esta proyección.','Un paso a la vez. Yo te acompaño.','¿Listo? Vamos a demostrar lo que sabes.','Cada práctica te acerca al dominio.','¡Vamos por ese 100%!'];
 const correctMessages = ['¡Excelente!','¡Eso es!','¡Muy bien! Sigue así.','¡Correcto! Vas dominando esta proyección.','¡Sabía que podías!'];
@@ -27,7 +27,7 @@ function isCorrect(question: PracticeQuestion, selected: string[], textAnswer: s
   return selected[0] === question.correctOption;
 }
 
-export function QuestionMasteryPractice({ bank, isVerification = false, scopeId, title }: Props) {
+export function QuestionMasteryPractice({ bank, verificationKind, scopeId, title }: Props) {
   const { answerQuestion, answerReviewQuestion, completeReview, completeRound, isHydrated, progress, startPracticeSession, startReview } = useLearningProgress();
   const [questions, setQuestions] = useState<PracticeQuestion[]>([]);
   const [index, setIndex] = useState(0);
@@ -47,11 +47,13 @@ export function QuestionMasteryPractice({ bank, isVerification = false, scopeId,
   const [reviewMode, setReviewMode] = useState(false);
   const question = questions[index];
 
-  const sourceFor = (source: LearningProgress) => isVerification ? source.thumbVerification : source.questionBankProgress[scopeId];
+  const sourceFor = (source: LearningProgress) => verificationKind ? (verificationKind === 'thumb' ? source.thumbVerification : source.handVerification) : source.questionBankProgress[scopeId];
   const begin = (source: LearningProgress) => {
     setReviewMode(false);
     const sourceProgress = sourceFor(source);
-    const allowed = isVerification ? source.thumbVerification.selectedQuestionIds : bank.map((item) => item.id);
+    const allowed: string[] = verificationKind
+      ? (verificationKind === 'thumb' ? source.thumbVerification.selectedQuestionIds : source.handVerification.selectedQuestionIds)
+      : bank.map((item) => item.id);
     const classified = new Set([...sourceProgress.masteredQuestionIds, ...sourceProgress.reinforcementQuestionIds]);
     const ids = sourceProgress.hasCompletedInitialRound ? sourceProgress.reinforcementQuestionIds : allowed.filter((id) => !classified.has(id));
     const pendingIds = ids.length ? ids : sourceProgress.reinforcementQuestionIds;
@@ -86,7 +88,7 @@ export function QuestionMasteryPractice({ bank, isVerification = false, scopeId,
   const check = () => {
     const answerIsCorrect = isCorrect(question, selected, textAnswer);
     const wasReinforcement = reviewMode ? progress.reviews[scopeId].reinforcementQuestionIds.includes(question.id) : sourceFor(progress).reinforcementQuestionIds.includes(question.id);
-    const update = reviewMode ? null : answerQuestion(scopeId, question.id, question.conceptId, answerIsCorrect, bank.length, isVerification);
+    const update = reviewMode ? null : answerQuestion(scopeId, question.id, question.conceptId, answerIsCorrect, bank.length, verificationKind);
     if (reviewMode) answerReviewQuestion(scopeId, question.id, answerIsCorrect);
     setCorrect(answerIsCorrect); setAnswered(true); setRecoveredThisAnswer(answerIsCorrect && wasReinforcement);
     setCorrectCount((value) => value + (answerIsCorrect ? 1 : 0)); setIncorrectCount((value) => value + (answerIsCorrect ? 0 : 1));
@@ -111,8 +113,8 @@ export function QuestionMasteryPractice({ bank, isVerification = false, scopeId,
       const review = completed.reviews[scopeId];
       setResult({ achievements: [], correct: correctCount, isReview: true, levelAfter, levelBefore, mastered: bank.length, pending: review.reinforcementQuestionIds.length, score, total, xp: 0 });
     } else {
-      const completed = completeRound(scopeId, score, isVerification);
-      const source = isVerification ? completed.thumbVerification : completed.questionBankProgress[scopeId];
+      const completed = completeRound(scopeId, score, verificationKind);
+      const source = verificationKind ? (verificationKind === 'thumb' ? completed.thumbVerification : completed.handVerification) : completed.questionBankProgress[scopeId];
       setResult({ achievements: earned, correct: correctCount, isReview: false, levelAfter, levelBefore, mastered: source.masteredQuestionIds.length, pending: source.reinforcementQuestionIds.length, score, total, xp: xpEarned });
     }
   };
@@ -125,7 +127,7 @@ export function QuestionMasteryPractice({ bank, isVerification = false, scopeId,
       <RayoCompanion message={done ? 'Esta proyección permanece dominada. Cuando quieras, podemos repasarla.' : 'Preparando tus preguntas pendientes.'} pose={done ? 'celebrate' : 'wave'} />
       <Text style={styles.resultScore}>{done ? '100%' : '0'}</Text>
       <Text style={styles.resultLabel}>{done ? `${title} · Dominada` : 'No hay preguntas disponibles'}</Text>
-      {done && !isVerification && <>
+      {done && !verificationKind && <>
         <View style={styles.dominionSeal}><Text style={styles.dominionSealText}>DOMINIO {title.toLocaleUpperCase('es')}</Text></View>
         <Pressable onPress={launchReview} style={styles.primary}><Text style={styles.primaryText}>Seguir practicando</Text></Pressable>
       </>}
@@ -145,20 +147,20 @@ export function QuestionMasteryPractice({ bank, isVerification = false, scopeId,
       </View>;
     }
     const complete = result.mastered === bank.length;
-    const unlockedVerification = result.achievements.some((achievement) => achievement.id === 'maestria-dedo-pulgar');
-    const hasNewProjectionBadge = result.achievements.some((achievement) => ['dominio-dedo-pulgar-ap', 'dominio-dedo-pulgar-oblicua', 'dominio-dedo-pulgar-lateral'].includes(achievement.id));
-    const message = complete ? (isVerification ? '¡Verificación completada!' : '¡Excelente! Has dominado esta proyección.') : result.pending <= 3 ? `¡Ya casi! Solo nos faltan ${result.pending}.` : '¡Buen trabajo! Nos quedan algunas por reforzar.';
+    const unlockedVerification = result.achievements.some((achievement) => ['maestria-dedo-pulgar', 'maestria-mano'].includes(achievement.id));
+    const hasNewProjectionBadge = result.achievements.some((achievement) => achievement.id.startsWith('dominio-dedo-pulgar-') || achievement.id.startsWith('dominio-mano-'));
+    const message = complete ? (verificationKind ? '¡Verificación completada!' : '¡Excelente! Has dominado esta proyección.') : result.pending <= 3 ? `¡Ya casi! Solo nos faltan ${result.pending}.` : '¡Buen trabajo! Nos quedan algunas por reforzar.';
     return <View style={styles.resultCard}>
-      {(!complete || (isVerification && result.achievements.length === 0)) && <RayoCompanion message={message} pose={complete ? 'celebrate' : 'wave'} />}
-      <Text style={styles.eyebrow}>{complete ? (isVerification ? 'VERIFICACIÓN COMPLETADA' : 'PROYECCIÓN DOMINADA') : 'RONDA COMPLETADA'}</Text>
+      {(!complete || (verificationKind && result.achievements.length === 0)) && <RayoCompanion message={message} pose={complete ? 'celebrate' : 'wave'} />}
+      <Text style={styles.eyebrow}>{complete ? (verificationKind ? 'VERIFICACIÓN COMPLETADA' : 'PROYECCIÓN DOMINADA') : 'RONDA COMPLETADA'}</Text>
       <Text style={styles.resultScore}>{Math.round((result.mastered / bank.length) * 100)}%</Text>
       <Text style={styles.resultLabel}>{result.mastered} de {bank.length} desafíos dominados</Text>
       <View style={styles.progress}><MasteryBar value={(result.mastered / bank.length) * 100} /></View>
       {!complete && <Text style={styles.pending}>{result.pending} desafíos por reforzar</Text>}
-      {complete && !isVerification && !hasNewProjectionBadge && <RewardCelebration code={title.slice(0, 2).toLocaleUpperCase('es')} eyebrow="PROYECCIÓN DOMINADA" message="¡Proyección dominada!" showRayo={!unlockedVerification} subtitle={`Has completado correctamente los ${bank.length} desafíos de ${title}.`} title={`Dominio ${title}`} />}
+      {complete && !verificationKind && !hasNewProjectionBadge && <RewardCelebration code={title.slice(0, 2).toLocaleUpperCase('es')} eyebrow="PROYECCIÓN DOMINADA" message="¡Proyección dominada!" showRayo={!unlockedVerification} subtitle={`Has completado correctamente los ${bank.length} desafíos de ${title}.`} title={`Dominio ${title}`} />}
       {unlockedVerification && <RewardCelebration code="VC" eyebrow="NUEVA ETAPA" message="¡Verificación de conocimientos desbloqueada!" subtitle="AP, Oblicua y Lateral están dominadas." title="Verificación disponible" />}
       {result.levelAfter > result.levelBefore && <RewardCelebration eyebrow="NUEVO NIVEL" message="¡Subiste de nivel!" subtitle="Rayo celebra contigo este nuevo avance." title={`Nivel ${result.levelAfter}`} />}
-      {result.achievements.filter((achievement) => achievement.id !== 'maestria-dedo-pulgar').map((achievement) => { const definition = getAchievementDefinition(achievement.id); return definition ? <AchievementCelebration definition={definition} key={achievement.id} showRayo xpGained={definition.xpReward} /> : null; })}
+      {result.achievements.filter((achievement) => !['maestria-dedo-pulgar', 'maestria-mano'].includes(achievement.id)).map((achievement) => { const definition = getAchievementDefinition(achievement.id); return definition ? <AchievementCelebration definition={definition} key={achievement.id} showRayo xpGained={definition.xpReward} /> : null; })}
       {!complete && <Pressable onPress={() => begin(progress)} style={styles.primary}><Text style={styles.primaryText}>Reforzar mis errores</Text></Pressable>}
     </View>;
   }

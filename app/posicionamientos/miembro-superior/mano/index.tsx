@@ -12,6 +12,7 @@ export default function HandScreen() {
   const { progress } = useLearningProgress();
   const mastery = calculateStudyMastery(progress, 'mano');
   const verificationUnlocked = handProjections.every((item) => progress.projections[item.id]?.mastery === 100);
+  const verified = progress.handVerification.status === 'Verificada';
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -29,7 +30,6 @@ export default function HandScreen() {
             <Text style={styles.overallPercentage}>{mastery}%</Text>
           </View>
           <MasteryBar value={mastery} />
-          <Text style={styles.pendingNote}>El dominio comenzará cuando se agreguen los bancos oficiales.</Text>
         </View>
 
         <Text style={styles.sectionTitle}>Proyecciones</Text>
@@ -46,11 +46,11 @@ export default function HandScreen() {
         </View>
 
         <Text style={styles.sectionTitle}>Evaluación final</Text>
-        <Pressable accessibilityRole="button" disabled style={styles.verificationCard}>
-          <View style={styles.verificationIcon}><Text style={styles.verificationCode}>—</Text></View>
+        <Pressable accessibilityRole="button" disabled={!verificationUnlocked} onPress={() => router.push('/posicionamientos/miembro-superior/mano/verificacion')} style={[styles.verificationCard, verificationUnlocked && styles.verificationAvailable]}>
+          <View style={[styles.verificationIcon, verificationUnlocked && styles.verificationIconAvailable]}><Text style={styles.verificationCode}>{verified ? '✓' : verificationUnlocked ? 'VC' : '🔒'}</Text></View>
           <View style={styles.verificationCopy}>
             <Text style={styles.verificationTitle}>Verificación de conocimientos</Text>
-            <Text style={styles.verificationText}>{verificationUnlocked ? 'Banco oficial pendiente de integración.' : 'Domina P.A., Oblicua y Lateral para desbloquear esta verificación.'}</Text>
+            <Text style={styles.verificationText}>{verified ? '30/30 · Mano Verificada' : verificationUnlocked ? `${progress.handVerification.masteredQuestionIds.length}/30 · ${progress.handVerification.status}` : 'Domina P.A., Oblicua y Lateral para desbloquear esta verificación.'}</Text>
           </View>
         </Pressable>
       </ScrollView>
@@ -71,11 +71,12 @@ const styles = StyleSheet.create({
   overallLabel: { color: colors.blanco, fontSize: 17, fontWeight: '800' },
   overallStatus: { marginTop: 5, color: '#B8DDF2', fontSize: 13, fontWeight: '600' },
   overallPercentage: { color: colors.blanco, fontSize: 28, fontWeight: '800' },
-  pendingNote: { marginTop: 12, color: '#B8DDF2', fontSize: 11, lineHeight: 16 },
   sectionTitle: { marginTop: 28, marginBottom: 14, color: colors.azulOscuro, fontSize: 19, fontWeight: '800' },
   list: { gap: 14 },
   verificationCard: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#D8E0E5', borderRadius: 22, backgroundColor: '#E9EDF0', padding: 17, opacity: 0.65 },
+  verificationAvailable: { borderColor: '#B8E2F7', backgroundColor: colors.blanco, opacity: 1 },
   verificationIcon: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#9DAAB2', borderRadius: 24, backgroundColor: '#758792' },
+  verificationIconAvailable: { borderColor: '#B8E2F7', backgroundColor: colors.azulClaro },
   verificationCode: { color: colors.blanco, fontSize: 11, fontWeight: '900' },
   verificationCopy: { flex: 1, marginLeft: 13 },
   verificationTitle: { color: colors.azulOscuro, fontSize: 15, fontWeight: '800' },

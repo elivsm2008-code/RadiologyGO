@@ -9,6 +9,7 @@ import { colors } from '@/src/constants/colors';
 import { useLearningProgress } from '@/src/context/LearningProgressContext';
 import { achievementCatalog, studyCatalog } from '@/src/data/learningCatalog';
 import { thumbQuestionBanks } from '@/src/data/thumbQuestionBanks';
+import { getHandQuestionBank } from '@/src/data/handQuestionBanks';
 import { calculateLevelProgress, calculateRegionMastery, calculateStudyMastery, getMasteryStatus, getProgressSummary } from '@/src/services/progressEngine';
 
 export default function ProgressScreen() {
@@ -109,24 +110,29 @@ export default function ProgressScreen() {
               <View style={styles.projectionList}>
                 {handStudy?.projectionIds.map((projectionId) => {
                   const projection = progress.projections[projectionId];
+                  const bankProgress = progress.questionBankProgress[projectionId];
+                  const totalChallenges = getHandQuestionBank(projectionId).length;
                   const title = projectionId === 'mano-pa' ? 'P.A.' : projectionId === 'mano-oblicua' ? 'Oblicua' : 'Lateral';
                   return (
-                    <View key={projectionId} style={styles.projectionRow}>
-                      <View style={styles.projectionCopy}>
-                        <Text style={styles.projectionTitle}>{title}</Text>
-                        <Text style={styles.projectionStatus}>{getMasteryStatus(projection?.mastery ?? 0)}</Text>
+                    <View key={projectionId} style={styles.projectionBlock}>
+                      <View style={styles.projectionRow}>
+                        <View style={styles.projectionCopy}>
+                          <Text style={styles.projectionTitle}>{title}</Text>
+                          <Text style={styles.projectionStatus}>{bankProgress?.masteredQuestionIds.length ?? 0}/{totalChallenges} · {getMasteryStatus(projection?.mastery ?? 0)}</Text>
+                        </View>
+                        <View style={styles.projectionProgress}><MasteryBar value={projection?.mastery ?? 0} /></View>
+                        <Text style={styles.projectionValue}>{projection?.mastery ?? 0}%</Text>
                       </View>
-                      <View style={styles.projectionProgress}><MasteryBar value={projection?.mastery ?? 0} /></View>
-                      <Text style={styles.projectionValue}>{projection?.mastery ?? 0}%</Text>
+                      {projection?.lastReviewScore != null && <Text style={styles.reviewStats}>Último repaso: {projection.lastReviewCorrect}/{projection.lastReviewTotal} · {projection.lastReviewScore}%   ·   Mejor resultado: {projection.bestScore}%   ·   Prácticas: {projection.practiceCount}</Text>}
                     </View>
                   );
                 })}
                 <View style={styles.verificationRow}>
-                  <View style={styles.projectionCopy}><Text style={styles.projectionTitle}>Verificación</Text><Text style={styles.projectionStatus}>Bloqueada</Text></View>
-                  <View style={styles.projectionProgress}><MasteryBar value={0} /></View>
-                  <Text style={styles.projectionValue}>0%</Text>
+                  <View style={styles.projectionCopy}><Text style={styles.projectionTitle}>Verificación</Text><Text style={styles.projectionStatus}>{progress.handVerification.masteredQuestionIds.length}/30 · {progress.handVerification.status}</Text></View>
+                  <View style={styles.projectionProgress}><MasteryBar value={(progress.handVerification.masteredQuestionIds.length / 30) * 100} /></View>
+                  <Text style={styles.projectionValue}>{Math.round((progress.handVerification.masteredQuestionIds.length / 30) * 100)}%</Text>
                 </View>
-                <Text style={styles.bankPending}>El progreso se activará con los bancos oficiales de Mano.</Text>
+                {progress.handVerification.status === 'Verificada' && <View style={styles.verifiedBanner}><Text style={styles.verifiedBannerTitle}>Mano — Verificada</Text><Text style={styles.verifiedBannerText}>Verificación de conocimientos completada.</Text></View>}
               </View>
             </View>
 
@@ -219,7 +225,6 @@ const styles = StyleSheet.create({
   verifiedBanner: { borderWidth: 1, borderColor: '#B8E2F7', borderRadius: 16, backgroundColor: '#EFFAFF', padding: 14 },
   verifiedBannerTitle: { color: colors.azulOscuro, fontSize: 14, fontWeight: '800' },
   verifiedBannerText: { marginTop: 3, color: '#647987', fontSize: 11 },
-  bankPending: { color: '#718492', fontSize: 10, lineHeight: 15 },
   collectionSubtitle: { marginTop: -4, marginBottom: 13, color: '#718492', fontSize: 12 },
   badgeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   badgeDetail: { marginTop: 12, borderLeftWidth: 4, borderLeftColor: colors.morado, borderRadius: 16, backgroundColor: colors.blanco, padding: 16 },

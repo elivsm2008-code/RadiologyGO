@@ -1,4 +1,5 @@
 import { thumbQuestionBanks } from '@/src/data/thumbQuestionBanks';
+import { handQuestionBanks } from '@/src/data/handQuestionBanks';
 import type { PracticeQuestion } from '@/src/types/practiceQuestions';
 
 function sample<T>(items: T[], count: number) {
@@ -22,3 +23,17 @@ export function getThumbVerificationBank(questionIds: string[]): PracticeQuestio
   const all = [...thumbQuestionBanks.ap, ...thumbQuestionBanks.oblicua, ...thumbQuestionBanks.lateral];
   return questionIds.map((id) => all.find((question) => question.id === id)).filter((question): question is PracticeQuestion => Boolean(question));
 }
+
+export function createHandVerificationQuestionIds() {
+  return [
+    ...sample(handQuestionBanks.pa, 10),
+    ...sample(handQuestionBanks.oblicua, 10),
+    ...sample(handQuestionBanks.lateral, 10)
+  ].map((question) => question.id);
+}
+
+export function getHandVerificationBank(questionIds: string[]): PracticeQuestion[] {
+  const all = [...handQuestionBanks.pa, ...handQuestionBanks.oblicua, ...handQuestionBanks.lateral];
+  return questionIds.map((id) => all.find((question) => question.id === id)).filter((question): question is PracticeQuestion => Boolean(question));
+}
+

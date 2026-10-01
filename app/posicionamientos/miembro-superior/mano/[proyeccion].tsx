@@ -3,11 +3,12 @@ import { useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { MasteryBar } from '@/src/components/MasteryBar';
-import { PendingQuestionBank } from '@/src/components/PendingQuestionBank';
+import { QuestionMasteryPractice } from '@/src/components/QuestionMasteryPractice';
 import { ProjectionLearningMode } from '@/src/components/ProjectionLearningMode';
 import { colors } from '@/src/constants/colors';
 import { useLearningProgress } from '@/src/context/LearningProgressContext';
 import { getHandProjection } from '@/src/data/handLearning';
+import { getHandQuestionBank } from '@/src/data/handQuestionBanks';
 import { getMasteryStatus } from '@/src/services/progressEngine';
 
 type Mode = 'aprender' | 'practicar';
@@ -20,6 +21,7 @@ export default function HandProjectionScreen() {
 
   if (!projection) return <SafeAreaView style={styles.safeArea}><View style={styles.missing}><Text style={styles.title}>Proyección no disponible</Text></View></SafeAreaView>;
   const projectionProgress = progress.projections[projection.id];
+  const bank = getHandQuestionBank(projection.id);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -35,7 +37,7 @@ export default function HandProjectionScreen() {
           <Pressable onPress={() => setMode('aprender')} style={[styles.tab, mode === 'aprender' && styles.activeTab]}><Text style={[styles.tabText, mode === 'aprender' && styles.activeTabText]}>APRENDER</Text></Pressable>
           <Pressable onPress={() => setMode('practicar')} style={[styles.tab, mode === 'practicar' && styles.activeTab]}><Text style={[styles.tabText, mode === 'practicar' && styles.activeTabText]}>PRACTICAR</Text></Pressable>
         </View>
-        {mode === 'aprender' ? <ProjectionLearningMode projection={projection} /> : <PendingQuestionBank />}
+        {mode === 'aprender' ? <ProjectionLearningMode projection={projection} /> : <QuestionMasteryPractice bank={bank} scopeId={projection.id} title={projection.title} />}
       </ScrollView>
     </SafeAreaView>
   );
