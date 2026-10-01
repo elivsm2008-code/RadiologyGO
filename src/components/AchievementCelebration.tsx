@@ -1,6 +1,6 @@
 import type { AchievementDefinition } from '@/src/types/learning';
 import { RewardCelebration } from './RewardCelebration';
-import { isThumbRadiographAchievement, ThumbRadiographBadge } from './ThumbRadiographBadge';
+import { AchievementBadge } from './AchievementBadge';
 
 type AchievementCelebrationProps = {
   definition: AchievementDefinition;
@@ -9,7 +9,6 @@ type AchievementCelebrationProps = {
 };
 
 export function AchievementCelebration({ definition, showRayo = true, xpGained }: AchievementCelebrationProps) {
-  const isThumbBadge = isThumbRadiographAchievement(definition.id);
   return (
     <RewardCelebration
       code={definition.code}
@@ -18,7 +17,7 @@ export function AchievementCelebration({ definition, showRayo = true, xpGained }
       showRayo={showRayo}
       subtitle={`Dedo pulgar · +${xpGained} XP`}
       title={definition.title}
-      visual={isThumbBadge ? <ThumbRadiographBadge definition={definition} earned={{ earnedAt: new Date().toISOString(), id: definition.id, title: definition.title }} mode="celebration" /> : undefined}
+      visual={<AchievementBadge definition={definition} earned={{ earnedAt: new Date().toISOString(), id: definition.id, title: definition.title }} mode="celebration" />}
     />
   );
 }
