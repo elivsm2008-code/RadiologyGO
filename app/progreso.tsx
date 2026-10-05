@@ -96,10 +96,10 @@ export default function ProgressScreen() {
                 <View style={styles.verificationRow}>
                   <View style={styles.projectionCopy}>
                     <Text style={styles.projectionTitle}>Verificación</Text>
-                    <Text style={styles.projectionStatus}>{progress.thumbVerification.masteredQuestionIds.length}/30 · {progress.thumbVerification.status}</Text>
+                    <Text style={styles.projectionStatus}>{progress.thumbVerification.masteredQuestionIds.length}/20 · {progress.thumbVerification.status}</Text>
                   </View>
-                  <View style={styles.projectionProgress}><MasteryBar value={(progress.thumbVerification.masteredQuestionIds.length / 30) * 100} /></View>
-                  <Text style={styles.projectionValue}>{Math.round((progress.thumbVerification.masteredQuestionIds.length / 30) * 100)}%</Text>
+                  <View style={styles.projectionProgress}><MasteryBar value={(progress.thumbVerification.masteredQuestionIds.length / 20) * 100} /></View>
+                  <Text style={styles.projectionValue}>{Math.round((progress.thumbVerification.masteredQuestionIds.length / 20) * 100)}%</Text>
                 </View>
                 {progress.thumbVerification.status === 'Verificada' && <View style={styles.verifiedBanner}><Text style={styles.verifiedBannerTitle}>Dedo pulgar — Verificado</Text><Text style={styles.verifiedBannerText}>Verificación de conocimientos completada.</Text></View>}
               </View>
@@ -128,9 +128,9 @@ export default function ProgressScreen() {
                   );
                 })}
                 <View style={styles.verificationRow}>
-                  <View style={styles.projectionCopy}><Text style={styles.projectionTitle}>Verificación</Text><Text style={styles.projectionStatus}>{progress.handVerification.masteredQuestionIds.length}/30 · {progress.handVerification.status}</Text></View>
-                  <View style={styles.projectionProgress}><MasteryBar value={(progress.handVerification.masteredQuestionIds.length / 30) * 100} /></View>
-                  <Text style={styles.projectionValue}>{Math.round((progress.handVerification.masteredQuestionIds.length / 30) * 100)}%</Text>
+                  <View style={styles.projectionCopy}><Text style={styles.projectionTitle}>Verificación</Text><Text style={styles.projectionStatus}>{progress.handVerification.masteredQuestionIds.length}/20 · {progress.handVerification.status}</Text></View>
+                  <View style={styles.projectionProgress}><MasteryBar value={(progress.handVerification.masteredQuestionIds.length / 20) * 100} /></View>
+                  <Text style={styles.projectionValue}>{Math.round((progress.handVerification.masteredQuestionIds.length / 20) * 100)}%</Text>
                 </View>
                 {progress.handVerification.status === 'Verificada' && <View style={styles.verifiedBanner}><Text style={styles.verifiedBannerTitle}>Mano — Verificada</Text><Text style={styles.verifiedBannerText}>Verificación de conocimientos completada.</Text></View>}
               </View>

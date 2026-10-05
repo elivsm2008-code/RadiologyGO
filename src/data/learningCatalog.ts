@@ -79,7 +79,7 @@ export const achievementCatalog: AchievementDefinition[] = [
     code: 'DV',
     title: 'Dedo Pulgar — Verificado',
     description: 'Has demostrado dominio completo de AP, Oblicua y Lateral.',
-    requirement: 'Domina las 30 preguntas de la Verificación de conocimientos.',
+    requirement: 'Domina las 20 preguntas de la Verificación de conocimientos.',
     xpReward: 200
   },
   {
@@ -100,7 +100,7 @@ export const achievementCatalog: AchievementDefinition[] = [
   },
   {
     id: 'mano-verificada', code: 'MV', title: 'Mano Verificada',
-    description: 'Has demostrado dominio completo de P.A., Oblicua y Lateral de Mano.', requirement: 'Domina los 30 desafíos de la Verificación de conocimientos.', xpReward: 200
+    description: 'Has demostrado dominio completo de P.A., Oblicua y Lateral de Mano.', requirement: 'Domina los 20 desafíos de la Verificación de conocimientos.', xpReward: 200
   }
 ];
 

@@ -50,7 +50,7 @@ export default function HandScreen() {
           <View style={[styles.verificationIcon, verificationUnlocked && styles.verificationIconAvailable]}><Text style={styles.verificationCode}>{verified ? '✓' : verificationUnlocked ? 'VC' : '🔒'}</Text></View>
           <View style={styles.verificationCopy}>
             <Text style={styles.verificationTitle}>Verificación de conocimientos</Text>
-            <Text style={styles.verificationText}>{verified ? '30/30 · Mano Verificada' : verificationUnlocked ? `${progress.handVerification.masteredQuestionIds.length}/30 · ${progress.handVerification.status}` : 'Domina P.A., Oblicua y Lateral para desbloquear esta verificación.'}</Text>
+            <Text style={styles.verificationText}>{verified ? '20/20 · Mano Verificada' : verificationUnlocked ? `${progress.handVerification.masteredQuestionIds.length}/20 · ${progress.handVerification.status}` : 'Domina P.A., Oblicua y Lateral para desbloquear esta verificación.'}</Text>
           </View>
         </Pressable>
       </ScrollView>

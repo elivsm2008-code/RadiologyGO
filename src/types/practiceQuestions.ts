@@ -5,6 +5,7 @@ export type QuestionBase = {
   isFinalChallenge?: boolean;
   prompt: string;
   title: string;
+  verificationSection?: 'AP' | 'PA' | 'OBLICUA' | 'LATERAL' | 'INTEGRADORA';
 };
 
 export type ChoiceQuestion = QuestionBase & {

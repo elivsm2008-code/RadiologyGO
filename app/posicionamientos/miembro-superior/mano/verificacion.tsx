@@ -17,8 +17,8 @@ export default function HandVerificationScreen() {
   return <SafeAreaView style={styles.safeArea}><ScrollView contentContainerStyle={styles.content}>
     <Text accessibilityRole="button" onPress={() => router.back()} style={styles.backButton}>‹  Mano</Text>
     <Text style={styles.eyebrow}>EVALUACIÓN FINAL</Text><Text style={styles.title}>Verificación de conocimientos</Text>
-    <Text style={styles.subtitle}>10 desafíos de P.A., 10 de Oblicua y 10 de Lateral.</Text>
-    {!unlocked ? <View style={styles.locked}><Text style={styles.lockedTitle}>Verificación bloqueada</Text><Text style={styles.lockedText}>Domina P.A., Oblicua y Lateral para desbloquear esta verificación.</Text></View> : bank.length === 30 ? <QuestionMasteryPractice bank={bank} verificationKind="hand" scopeId="hand-verification" title="Verificación de Mano" /> : <View style={styles.locked}><Text style={styles.lockedText}>Preparando tu verificación…</Text></View>}
+    <Text style={styles.subtitle}>6 preguntas de PA, 6 de Oblicua, 6 de Lateral y 2 integradoras.</Text>
+    {!unlocked ? <View style={styles.locked}><Text style={styles.lockedTitle}>Verificación bloqueada</Text><Text style={styles.lockedText}>Domina P.A., Oblicua y Lateral para desbloquear esta verificación.</Text></View> : bank.length === 20 ? <QuestionMasteryPractice bank={bank} verificationKind="hand" scopeId="hand-verification" title="Verificación de Mano" /> : <View style={styles.locked}><Text style={styles.lockedText}>Preparando tu verificación…</Text></View>}
   </ScrollView></SafeAreaView>;
 }
 
