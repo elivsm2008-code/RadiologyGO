@@ -5,7 +5,7 @@ export type QuestionBase = {
   isFinalChallenge?: boolean;
   prompt: string;
   title: string;
-  verificationSection?: 'AP' | 'PA' | 'OBLICUA' | 'LATERAL' | 'INTEGRADORA';
+  verificationSection?: string;
 };
 
 export type ChoiceQuestion = QuestionBase & {
@@ -33,4 +33,3 @@ export type TextQuestion = QuestionBase & {
 };
 
 export type PracticeQuestion = ChoiceQuestion | MultiSelectQuestion | OrderQuestion | TextQuestion;
-
