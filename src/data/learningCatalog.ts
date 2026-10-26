@@ -1,4 +1,5 @@
 import type { AchievementDefinition } from '@/src/types/learning';
+import { upperLimbStudies } from '@/src/data/upperLimbLearning';
 
 export type ProjectionCatalogItem = {
   achievementId: string;
@@ -15,13 +16,64 @@ export type StudyCatalogItem = {
   title: string;
 };
 
+const upperLimbProjectionCatalog: ProjectionCatalogItem[] = upperLimbStudies.flatMap((study) => [
+  ...study.projections.map((projection) => ({
+    id: `${study.id}-${projection.slug}`,
+    title: projection.title,
+    studyId: study.id,
+    achievementId: `dominio-${study.id}-${projection.slug}`
+  })),
+  {
+    id: `${study.id}-verification`,
+    title: `Verificación de ${study.title}`,
+    studyId: study.id,
+    achievementId: `verificado-${study.id}`
+  }
+]);
+
+const upperLimbStudyCatalog: StudyCatalogItem[] = upperLimbStudies.map((study) => ({
+  id: study.id,
+  title: study.title,
+  regionId: 'miembro-superior',
+  projectionIds: study.projections.map((projection) => `${study.id}-${projection.slug}`),
+  achievementId: `maestria-${study.id}`
+}));
+
+const upperLimbAchievementCatalog: AchievementDefinition[] = upperLimbStudies.flatMap((study) => [
+  ...study.projections.map((projection) => ({
+    id: `dominio-${study.id}-${projection.slug}`,
+    code: projection.title.slice(0, 3).toLocaleUpperCase('es'),
+    title: `${study.title} — ${projection.title} Dominada`,
+    description: `Has completado correctamente los 15 desafíos de ${projection.title}.`,
+    requirement: `Domina los 15 desafíos oficiales de ${projection.title}.`,
+    xpReward: 50
+  })),
+  {
+    id: `maestria-${study.id}`,
+    code: study.title.slice(0, 2).toLocaleUpperCase('es'),
+    title: `Maestría: ${study.title}`,
+    description: `Reconocimiento por dominar todas las proyecciones de ${study.title}.`,
+    requirement: 'Alcanza 100% en todas las proyecciones de esta región.',
+    xpReward: 100
+  },
+  {
+    id: `verificado-${study.id}`,
+    code: 'VC',
+    title: `${study.title} — Verificada`,
+    description: `Has completado las 20 preguntas de verificación de ${study.title}.`,
+    requirement: 'Domina las 20 preguntas de la Verificación de conocimientos.',
+    xpReward: 200
+  }
+]);
+
 export const projectionCatalog: ProjectionCatalogItem[] = [
   { id: 'ap', title: 'AP', studyId: 'dedo-pulgar', achievementId: 'dominio-dedo-pulgar-ap' },
   { id: 'oblicua', title: 'Oblicua', studyId: 'dedo-pulgar', achievementId: 'dominio-dedo-pulgar-oblicua' },
   { id: 'lateral', title: 'Lateral', studyId: 'dedo-pulgar', achievementId: 'dominio-dedo-pulgar-lateral' },
   { id: 'mano-pa', title: 'P.A.', studyId: 'mano', achievementId: 'dominio-mano-pa' },
   { id: 'mano-oblicua', title: 'Oblicua', studyId: 'mano', achievementId: 'dominio-mano-oblicua' },
-  { id: 'mano-lateral', title: 'Lateral', studyId: 'mano', achievementId: 'dominio-mano-lateral' }
+  { id: 'mano-lateral', title: 'Lateral', studyId: 'mano', achievementId: 'dominio-mano-lateral' },
+  ...upperLimbProjectionCatalog
 ];
 
 export const studyCatalog: StudyCatalogItem[] = [
@@ -38,7 +90,8 @@ export const studyCatalog: StudyCatalogItem[] = [
     regionId: 'miembro-superior',
     projectionIds: ['mano-pa', 'mano-oblicua', 'mano-lateral'],
     achievementId: 'maestria-mano'
-  }
+  },
+  ...upperLimbStudyCatalog
 ];
 
 export const achievementCatalog: AchievementDefinition[] = [
@@ -101,7 +154,8 @@ export const achievementCatalog: AchievementDefinition[] = [
   {
     id: 'mano-verificada', code: 'MV', title: 'Mano Verificada',
     description: 'Has demostrado dominio completo de P.A., Oblicua y Lateral de Mano.', requirement: 'Domina los 20 desafíos de la Verificación de conocimientos.', xpReward: 200
-  }
+  },
+  ...upperLimbAchievementCatalog
 ];
 
 export function getProjectionCatalogItem(id: string) {
@@ -115,4 +169,3 @@ export function getStudyCatalogItem(id: string) {
 export function getAchievementDefinition(id: string) {
   return achievementCatalog.find((achievement) => achievement.id === id);
 }
-
