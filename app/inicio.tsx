@@ -9,13 +9,15 @@ const practiceOptions: PracticeOption[] = [
   { id: 'posicionamientos', title: 'Posicionamientos', caption: 'Explorar regiones' },
   { id: 'casos-clinicos', title: 'Casos clínicos' },
   { id: 'evaluaciones', title: 'Evaluaciones' },
-  { id: 'mi-progreso', title: 'Mi progreso', caption: 'Ver avance', accent: true }
+  { id: 'mi-progreso', title: 'Mi progreso', caption: 'Ver avance', accent: true },
+  { id: 'configuracion', title: 'Configuración', caption: 'Sonido y música' }
 ];
 
 export default function HomeScreen() {
   const openOption = (id: string) => {
     if (id === 'posicionamientos') router.push('/posicionamientos');
     if (id === 'mi-progreso') router.push('/progreso');
+    if (id === 'configuracion') router.push('/configuracion/sonido');
   };
 
   return (
@@ -36,7 +38,7 @@ export default function HomeScreen() {
             <PracticeCard
               key={option.id}
               index={index}
-              onPress={['posicionamientos', 'mi-progreso'].includes(option.id) ? () => openOption(option.id) : undefined}
+              onPress={['posicionamientos', 'mi-progreso', 'configuracion'].includes(option.id) ? () => openOption(option.id) : undefined}
               option={option}
             />
           ))}
