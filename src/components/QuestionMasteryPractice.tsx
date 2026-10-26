@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { colors } from '@/src/constants/colors';
 import { useLearningProgress } from '@/src/context/LearningProgressContext';
+import { useAudio } from '@/src/context/AudioContext';
 import { getAchievementDefinition, getProjectionCatalogItem } from '@/src/data/learningCatalog';
 import type { Achievement, LearningProgress, VerificationKind } from '@/src/types/learning';
 import type { PracticeQuestion } from '@/src/types/practiceQuestions';
@@ -29,6 +30,7 @@ function isCorrect(question: PracticeQuestion, selected: string[], textAnswer: s
 
 export function QuestionMasteryPractice({ bank, verificationKind, verificationLabel, scopeId, title }: Props) {
   const { answerQuestion, answerReviewQuestion, completeReview, completeRound, isHydrated, progress, startPracticeSession, startReview } = useLearningProgress();
+  const { playEffect } = useAudio();
   const [questions, setQuestions] = useState<PracticeQuestion[]>([]);
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<string[]>([]);
@@ -104,6 +106,7 @@ export function QuestionMasteryPractice({ bank, verificationKind, verificationLa
           ? '¡Eso es! Ahora sí la tienes.'
           : pick(answerIsCorrect ? correctMessages : reviewMessages)
     );
+    playEffect(answerIsCorrect ? 'answerCorrect' : 'answerIncorrect');
   };
   const next = () => {
     if (index < questions.length - 1) { setIndex(index + 1); setSelected([]); setTextAnswer(''); setAnswered(false); setCorrect(false); setRecoveredThisAnswer(false); setRayoMessage(pick(startMessages)); return; }
@@ -116,6 +119,8 @@ export function QuestionMasteryPractice({ bank, verificationKind, verificationLa
     } else {
       const completed = completeRound(scopeId, score, verificationKind);
       const source = verificationKind ? (verificationKind === 'thumb' ? completed.thumbVerification : completed.handVerification) : completed.questionBankProgress[scopeId];
+      const completedMastery = source.masteredQuestionIds.length === bank.length;
+      playEffect(completedMastery ? (isVerification ? 'verificationComplete' : earned.length ? 'badgeUnlocked' : 'challengeComplete') : 'challengeComplete');
       setResult({ achievements: earned, correct: correctCount, isReview: false, levelAfter, levelBefore, mastered: source.masteredQuestionIds.length, pending: source.reinforcementQuestionIds.length, score, total, xp: xpEarned });
     }
   };
