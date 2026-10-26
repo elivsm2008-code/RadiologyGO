@@ -61,7 +61,8 @@ export const upperLimbStudies: UpperLimbStudy[] = [
     id: 'humero',
     title: 'Húmero',
     projections: [
-      projection('ap', 'AP', supineOrErect, 'Mano del lado afectado en supino; cóndilos humerales paralelos al receptor de imagen.', 'Perpendicular al punto medio del húmero.')
+      projection('ap', 'AP', supineOrErect, 'Mano del lado afectado en supino; cóndilos humerales paralelos al receptor de imagen.', 'Perpendicular al punto medio del húmero.'),
+      projection('lateral', 'Lateral', supineOrErect, 'La mano del lado afectado debe estar en posición prona. Los cóndilos humerales deben quedar perpendiculares al receptor de imagen.', 'Perpendicular al punto medio del húmero.')
     ]
   },
   {
