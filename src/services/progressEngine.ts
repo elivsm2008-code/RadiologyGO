@@ -1,6 +1,7 @@
 import { achievementCatalog, getAchievementDefinition, getProjectionCatalogItem, getStudyCatalogItem, projectionCatalog, studyCatalog } from '@/src/data/learningCatalog';
-import { thumbQuestionBanks, thumbQuestionIds } from '@/src/data/thumbQuestionBanks';
-import { handQuestionBanks, handQuestionIds } from '@/src/data/handQuestionBanks';
+import { thumbQuestionIds } from '@/src/data/thumbQuestionBanks';
+import { handQuestionIds } from '@/src/data/handQuestionBanks';
+import { upperLimbQuestionIds } from '@/src/data/upperLimbQuestionBanks';
 import { verificationQuestionIds } from '@/src/data/verificationQuestionBanks';
 import type { Achievement, KnowledgeVerificationProgress, LearningProgress, LevelProgress, MasteryStatus, PracticeResult, PracticeUpdate, ProjectionProgress, ProjectionReviewProgress, QuestionAnswerUpdate, QuestionBankProgress, VerificationKind } from '@/src/types/learning';
 
@@ -22,10 +23,10 @@ export function normalizeLearningProgress(value?: Partial<LearningProgress> | nu
   const initial = createInitialLearningProgress();
   if (!value || typeof value !== 'object') return initial;
   const hasQuestionMastery = (value.schemaVersion ?? 0) >= 3;
+  const allQuestionIds: Record<string, Set<string>> = { ...thumbQuestionIds, ...handQuestionIds, ...upperLimbQuestionIds };
   const banks = Object.fromEntries(projectionCatalog.map((item) => {
     const stored = hasQuestionMastery ? value.questionBankProgress?.[item.id] : undefined;
-    const allQuestionIds = { ...thumbQuestionIds, ...handQuestionIds };
-    const validIds = item.id in allQuestionIds ? allQuestionIds[item.id as keyof typeof allQuestionIds] : null;
+    const validIds = allQuestionIds[item.id] ?? null;
     const masteredQuestionIds = validIds ? (stored?.masteredQuestionIds ?? []).filter((id) => validIds.has(id)) : (stored?.masteredQuestionIds ?? []);
     const reinforcementQuestionIds = validIds ? (stored?.reinforcementQuestionIds ?? []).filter((id) => validIds.has(id)) : (stored?.reinforcementQuestionIds ?? []);
     const classifiedCount = new Set([...masteredQuestionIds, ...reinforcementQuestionIds]).size;
@@ -39,11 +40,7 @@ export function normalizeLearningProgress(value?: Partial<LearningProgress> | nu
   }));
   const projections = Object.fromEntries(projectionCatalog.map((item) => {
     const stored = value.projections?.[item.id];
-    const totals: Record<string, number> = {
-      ap: thumbQuestionBanks.ap.length, oblicua: thumbQuestionBanks.oblicua.length, lateral: thumbQuestionBanks.lateral.length,
-      'mano-pa': handQuestionBanks.pa.length, 'mano-oblicua': handQuestionBanks.oblicua.length, 'mano-lateral': handQuestionBanks.lateral.length
-    };
-    const total = totals[item.id] ?? 1;
+    const total = allQuestionIds[item.id]?.size ?? 1;
     const mastery = Math.round(((banks[item.id]?.masteredQuestionIds.length ?? 0) / total) * 100);
     return [item.id, { ...emptyProjection(), ...(stored ?? {}), mastery }];
   }));
@@ -226,4 +223,3 @@ export function applyPracticeResult(current: LearningProgress, result: PracticeR
 }
 
 export { achievementCatalog };
-
