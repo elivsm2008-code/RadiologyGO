@@ -2,10 +2,11 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { PendingQuestionBank } from '@/src/components/PendingQuestionBank';
+import { QuestionMasteryPractice } from '@/src/components/QuestionMasteryPractice';
 import { ProjectionLearningMode } from '@/src/components/ProjectionLearningMode';
 import { colors } from '@/src/constants/colors';
 import { getUpperLimbProjection, getUpperLimbStudy } from '@/src/data/upperLimbLearning';
+import { getUpperLimbPracticeBank } from '@/src/data/upperLimbQuestionBanks';
 
 type Mode = 'aprender' | 'practicar';
 
@@ -14,6 +15,8 @@ export default function UpperLimbProjectionScreen() {
   const [mode, setMode] = useState<Mode>('aprender');
   const study = getUpperLimbStudy(estudio);
   const projection = getUpperLimbProjection(estudio, proyeccion);
+  const bank = estudio && proyeccion ? getUpperLimbPracticeBank(estudio, proyeccion) : [];
+  const scopeId = `${estudio}-${proyeccion}`;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -35,7 +38,7 @@ export default function UpperLimbProjectionScreen() {
         </View>
 
         {projection ? (
-          mode === 'aprender' ? <ProjectionLearningMode projection={projection} /> : <PendingQuestionBank />
+          mode === 'aprender' ? <ProjectionLearningMode projection={projection} /> : <QuestionMasteryPractice bank={bank} scopeId={scopeId} title={projection.title} />
         ) : (
           <View style={styles.missing}><Text style={styles.missingText}>Esta proyección aún no tiene contenido académico disponible.</Text></View>
         )}
@@ -60,4 +63,3 @@ const styles = StyleSheet.create({
   missing: { borderRadius: 18, backgroundColor: colors.blanco, padding: 20 },
   missingText: { color: '#667B89', fontSize: 14, lineHeight: 21 }
 });
-
