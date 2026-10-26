@@ -7,10 +7,10 @@ export function PendingQuestionBank() {
   return (
     <View style={styles.card}>
       <RayoCompanion message="El contenido para aprender ya está listo. La práctica se activará con tu banco académico oficial." pose="wave" />
-      <Text style={styles.eyebrow}>PRÁCTICA PREPARADA</Text>
-      <Text style={styles.title}>Banco oficial pendiente</Text>
-      <Text style={styles.text}>Aquí se integrarán las 30 preguntas oficiales de esta proyección. No se han añadido preguntas provisionales.</Text>
-      <View style={styles.status}><Text style={styles.statusText}>0 de 30 preguntas disponibles</Text></View>
+      <Text style={styles.eyebrow}>PRÓXIMA FASE</Text>
+      <Text style={styles.title}>Próximamente: actividades de aprendizaje</Text>
+      <Text style={styles.text}>Esta práctica permanecerá deshabilitada hasta integrar y revisar su banco académico oficial.</Text>
+      <View style={styles.status}><Text style={styles.statusText}>Sin actividades provisionales</Text></View>
     </View>
   );
 }
